@@ -1,0 +1,160 @@
+[
+  {
+    "model": "inventory.supplier",
+    "pk": 1,
+    "fields": {
+      "name": "Local Bead Co.",
+      "contact_name": "Sarah",
+      "email": "sarah@localbead.example",
+      "phone": "+27 82 000 0001",
+      "website": "",
+      "typical_lead_time_days": 5,
+      "notes": "Primary local supplier — fast delivery in Cape Town area.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.supplier",
+    "pk": 2,
+    "fields": {
+      "name": "Aliexpress (international)",
+      "contact_name": "",
+      "email": "",
+      "phone": "",
+      "website": "https://www.aliexpress.com",
+      "typical_lead_time_days": 21,
+      "notes": "International — long lead time. Use as fallback only.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.rawmaterial",
+    "pk": 1,
+    "fields": {
+      "sku": "BEAD-RED-6MM",
+      "name": "Red bead 6mm",
+      "unit": "piece",
+      "current_stock": "240.0000",
+      "reorder_point": "50.0000",
+      "reorder_quantity": "500.0000",
+      "last_paid_unit_cost": "0.5000",
+      "preferred_supplier": 1,
+      "notes": "Carnelian-tone, glass.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.rawmaterial",
+    "pk": 2,
+    "fields": {
+      "sku": "BEAD-WHITE-6MM",
+      "name": "White bead 6mm",
+      "unit": "piece",
+      "current_stock": "30.0000",
+      "reorder_point": "50.0000",
+      "reorder_quantity": "500.0000",
+      "last_paid_unit_cost": "0.7500",
+      "preferred_supplier": 1,
+      "notes": "Mother-of-pearl.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.rawmaterial",
+    "pk": 3,
+    "fields": {
+      "sku": "WIRE-MEM-1MM",
+      "name": "Memory wire 1mm",
+      "unit": "metre",
+      "current_stock": "8.0000",
+      "reorder_point": "2.0000",
+      "reorder_quantity": "20.0000",
+      "last_paid_unit_cost": "12.0000",
+      "preferred_supplier": 1,
+      "notes": "Stainless steel.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.rawmaterial",
+    "pk": 4,
+    "fields": {
+      "sku": "CRYSTAL-RQ-SM",
+      "name": "Rose quartz tumbled small",
+      "unit": "piece",
+      "current_stock": "15.0000",
+      "reorder_point": "5.0000",
+      "reorder_quantity": "30.0000",
+      "last_paid_unit_cost": "18.0000",
+      "preferred_supplier": 1,
+      "notes": "Heart chakra. Natural stone, varies in colour.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.product",
+    "pk": 1,
+    "fields": {
+      "sku": "NECK-RQ-001",
+      "name": "Rose Quartz Heart Necklace",
+      "pillar": "BODY_ADORNMENTS",
+      "retail_price_zar": "450.00",
+      "notes": "Bestseller. Made to order in 5–7 days.",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00+02:00",
+      "updated_at": "2026-01-01T08:00:00+02:00"
+    }
+  },
+  {
+    "model": "inventory.bomline",
+    "pk": 1,
+    "fields": {
+      "product": 1,
+      "raw_material": 1,
+      "quantity": "12.0000",
+      "notes": ""
+    }
+  },
+  {
+    "model": "inventory.bomline",
+    "pk": 2,
+    "fields": {
+      "product": 1,
+      "raw_material": 2,
+      "quantity": "8.0000",
+      "notes": ""
+    }
+  },
+  {
+    "model": "inventory.bomline",
+    "pk": 3,
+    "fields": {
+      "product": 1,
+      "raw_material": 3,
+      "quantity": "0.5000",
+      "notes": "Memory wire — enough for 2 wraps"
+    }
+  },
+  {
+    "model": "inventory.bomline",
+    "pk": 4,
+    "fields": {
+      "product": 1,
+      "raw_material": 4,
+      "quantity": "1.0000",
+      "notes": "Centre stone"
+    }
+  }
+]

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>African Goddess — Operations Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        body { padding: 1rem 2rem; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
+        .kpi { padding: 1rem; border-radius: 0.5rem; background: var(--pico-card-background-color); border: 1px solid var(--pico-card-border-color); }
+        .kpi h3 { font-size: 2rem; margin: 0 0 0.25rem; }
+        .kpi small { color: var(--pico-muted-color); }
+        .kpi.alert h3 { color: #c0392b; }
+        table { width: 100%; }
+        .reorder-badge { background: #c0392b; color: #fff; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; }
+        .nav { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--pico-muted-border-color); margin-bottom: 1.5rem; }
+        .nav a { margin-left: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="nav">
+        <strong>African Goddess — Operations</strong>
+        <nav>
+            <a href="/admin/inventory/rawmaterial/">Raw materials</a>
+            <a href="/admin/inventory/product/">Products</a>
+            <a href="/admin/inventory/purchaseorder/">Purchase orders</a>
+            <a href="/admin/inventory/productionrun/">Production runs</a>
+            <a href="/admin/">Admin home</a>
+            <a href="/admin/logout/">Sign out</a>
+        </nav>
+    </header>
+
+    <h1>Today's snapshot</h1>
+
+    <div class="kpi-grid">
+        <div class="kpi {% if low_stock_count %}alert{% endif %}">
+            <h3>{{ low_stock_count }}</h3>
+            <small>Materials below reorder point</small>
+        </div>
+        <div class="kpi">
+            <h3>{{ open_pos_count }}</h3>
+            <small>Purchase orders awaiting receipt</small>
+        </div>
+        <div class="kpi">
+            <h3>R {{ stock_value|floatformat:2 }}</h3>
+            <small>Stock value (at last-paid unit cost)</small>
+        </div>
+        <div class="kpi">
+            <h3>{{ products_count }}</h3>
+            <small>Active products</small>
+        </div>
+        <div class="kpi">
+            <h3>{{ materials_count }}</h3>
+            <small>Active raw materials</small>
+        </div>
+    </div>
+
+    <section>
+        <h2>Materials needing reorder</h2>
+        {% if low_stock %}
+        <table>
+            <thead>
+                <tr>
+                    <th>SKU</th><th>Material</th><th>Stock</th><th>Reorder at</th>
+                    <th>Reorder qty</th><th>Preferred supplier</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for m in low_stock %}
+                <tr>
+                    <td><code>{{ m.sku }}</code></td>
+                    <td>{{ m.name }}</td>
+                    <td>{{ m.current_stock }} {{ m.unit }}</td>
+                    <td>{{ m.reorder_point }} {{ m.unit }}</td>
+                    <td>{{ m.reorder_quantity }} {{ m.unit }}</td>
+                    <td>{{ m.preferred_supplier|default:"—" }}</td>
+                    <td><span class="reorder-badge">REORDER</span></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p><em>Everything is above its reorder point. Nothing to do here today.</em></p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Open purchase orders</h2>
+        {% if open_pos %}
+        <table>
+            <thead>
+                <tr><th>Reference</th><th>Supplier</th><th>Status</th><th>Expected</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+            {% for po in open_pos %}
+                <tr>
+                    <td><a href="/admin/inventory/purchaseorder/{{ po.pk }}/change/">{{ po.reference }}</a></td>
+                    <td>{{ po.supplier.name }}</td>
+                    <td>{{ po.get_status_display }}</td>
+                    <td>{{ po.expected_date|default:"—" }}</td>
+                    <td>R {{ po.total_cost|floatformat:2 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p><em>No open purchase orders.</em></p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Recent production runs</h2>
+        {% if recent_runs %}
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Product</th><th>Quantity</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+            {% for r in recent_runs %}
+                <tr>
+                    <td>{{ r.run_date }}</td>
+                    <td>{{ r.product.name }} (<code>{{ r.product.sku }}</code>)</td>
+                    <td>{{ r.quantity }}</td>
+                    <td>{{ r.notes|truncatechars:80 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p><em>No production runs recorded yet.</em></p>
+        {% endif %}
+    </section>
+
+    <footer style="margin-top: 3rem; color: var(--pico-muted-color); font-size: 0.85rem;">
+        <hr>
+        African Goddess Operations — v0.1.0-mvp · Day 1 ·
+        <a href="/admin/">Admin</a> · {{ request.user.username }}
+    </footer>
+</body>
+</html>
