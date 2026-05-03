@@ -26,6 +26,7 @@ app.log
 Thumbs.db
 
 staticfiles/
+.django-unfold-cache/
 media/
 
 *.log

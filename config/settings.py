@@ -29,6 +29,11 @@ CSRF_TRUSTED_ORIGINS = [f"http://{h}:8000" for h in ALLOWED_HOSTS]
 # --- Apps -------------------------------------------------------------------
 
 INSTALLED_APPS = [
+    # Unfold admin theme — must come BEFORE django.contrib.admin
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.inlines",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -41,6 +46,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise serves static files efficiently in production. Must come
+    # right after SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -107,6 +115,16 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# WhiteNoise: compressed + cache-busted static files in production
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # --- Defaults ---------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -145,3 +163,90 @@ LOGGING = {
 
 # Currency symbol used by templates. Single-currency app.
 CURRENCY_SYMBOL = "R"
+
+# --- Unfold admin theme -----------------------------------------------------
+# Brand palette: warm terracotta primary, muted gold accent, cream background.
+# Inspired by African Goddess's "Sacred Tools For Sacred Times" positioning.
+
+UNFOLD = {
+    "SITE_TITLE": "African Goddess — Operations",
+    "SITE_HEADER": "African Goddess",
+    "SITE_SUBHEADER": "Operations",
+    "SITE_SYMBOL": "auto_awesome",  # Material icon name
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
+    "THEME": "light",
+    "LOGIN": {
+        "image": lambda r: "/static/branding/login_panel.svg",
+    },
+    "STYLES": [
+        lambda r: "/static/branding/unfold-overrides.css",
+    ],
+    "COLORS": {
+        "base": {
+            "50": "250 246 241",   # warm cream
+            "100": "245 238 230",
+            "200": "232 221 211",
+            "300": "199 184 170",
+            "400": "144 127 113",
+            "500": "107 93 82",
+            "600": "78 65 55",
+            "700": "63 50 41",
+            "800": "45 24 16",
+            "900": "30 16 11",
+            "950": "20 11 7",
+        },
+        "primary": {
+            "50": "253 246 235",   # cream-tinged amber
+            "100": "250 234 211",
+            "200": "243 213 169",
+            "300": "232 187 121",
+            "400": "210 149 76",
+            "500": "160 82 45",    # terracotta — brand primary
+            "600": "139 68 35",
+            "700": "110 53 26",
+            "800": "79 38 19",
+            "900": "61 28 14",
+            "950": "45 20 10",
+        },
+        "font": {
+            "subtle-light": "107 93 82",
+            "subtle-dark": "199 184 170",
+            "default-light": "63 50 41",
+            "default-dark": "245 238 230",
+            "important-light": "45 24 16",
+            "important-dark": "250 246 241",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Operations",
+                "separator": False,
+                "items": [
+                    {"title": "Dashboard", "icon": "dashboard", "link": "/"},
+                ],
+            },
+            {
+                "title": "Catalogue",
+                "separator": True,
+                "items": [
+                    {"title": "Products", "icon": "auto_awesome", "link": "/admin/inventory/product/"},
+                    {"title": "Raw materials", "icon": "scatter_plot", "link": "/admin/inventory/rawmaterial/"},
+                    {"title": "Suppliers", "icon": "store", "link": "/admin/inventory/supplier/"},
+                ],
+            },
+            {
+                "title": "Operations",
+                "separator": True,
+                "items": [
+                    {"title": "Production runs", "icon": "construction", "link": "/admin/inventory/productionrun/"},
+                    {"title": "Purchase orders", "icon": "local_shipping", "link": "/admin/inventory/purchaseorder/"},
+                    {"title": "Stock movements", "icon": "history", "link": "/admin/inventory/stockmovement/"},
+                ],
+            },
+        ],
+    },
+}

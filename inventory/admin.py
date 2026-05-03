@@ -4,11 +4,17 @@ Django admin for African Goddess inventory & operations.
 This is Tersia's primary CRUD interface. Optimised for at-a-glance
 operational signal: needs-reorder badges, stock value, what-can-I-make,
 and one-line summaries on every list page.
+
+Uses django-unfold's ModelAdmin/TabularInline base classes for the
+themed visual treatment (matches the brand palette configured in
+settings.UNFOLD).
 """
 
 from django.contrib import admin
 from django.db.models import Sum, F
 from django.utils.html import format_html
+
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import (
     BomLine,
@@ -28,7 +34,7 @@ from .models import (
 
 
 @admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
+class SupplierAdmin(ModelAdmin):
     list_display = ("name", "contact_name", "email", "phone",
                     "typical_lead_time_days", "is_active")
     list_filter = ("is_active",)
@@ -47,7 +53,7 @@ class SupplierAdmin(admin.ModelAdmin):
 
 
 @admin.register(RawMaterial)
-class RawMaterialAdmin(admin.ModelAdmin):
+class RawMaterialAdmin(ModelAdmin):
     list_display = (
         "sku", "name", "unit",
         "current_stock", "reorder_point",
@@ -87,7 +93,7 @@ class RawMaterialAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 
 
-class BomLineInline(admin.TabularInline):
+class BomLineInline(TabularInline):
     model = BomLine
     extra = 1
     autocomplete_fields = ("raw_material",)
@@ -95,7 +101,7 @@ class BomLineInline(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ModelAdmin):
     list_display = (
         "sku", "name", "pillar",
         "retail_price_zar",
@@ -131,7 +137,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 @admin.register(BomLine)
-class BomLineAdmin(admin.ModelAdmin):
+class BomLineAdmin(ModelAdmin):
     list_display = ("product", "raw_material", "quantity")
     list_filter = ("product__pillar",)
     search_fields = ("product__sku", "product__name", "raw_material__sku", "raw_material__name")
@@ -143,7 +149,7 @@ class BomLineAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 
 
-class PurchaseOrderLineInline(admin.TabularInline):
+class PurchaseOrderLineInline(TabularInline):
     model = PurchaseOrderLine
     extra = 1
     autocomplete_fields = ("raw_material",)
@@ -158,7 +164,7 @@ class PurchaseOrderLineInline(admin.TabularInline):
 
 
 @admin.register(PurchaseOrder)
-class PurchaseOrderAdmin(admin.ModelAdmin):
+class PurchaseOrderAdmin(ModelAdmin):
     list_display = ("reference", "supplier", "status", "expected_date",
                     "received_date", "total_cost_admin", "created_at")
     list_filter = ("status", "supplier")
@@ -186,7 +192,7 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProductionRun)
-class ProductionRunAdmin(admin.ModelAdmin):
+class ProductionRunAdmin(ModelAdmin):
     list_display = ("run_date", "product", "quantity", "created_at", "created_by")
     list_filter = ("product__pillar", "run_date")
     search_fields = ("product__sku", "product__name", "notes")
@@ -219,7 +225,7 @@ class ProductionRunAdmin(admin.ModelAdmin):
 
 
 @admin.register(StockMovement)
-class StockMovementAdmin(admin.ModelAdmin):
+class StockMovementAdmin(ModelAdmin):
     list_display = ("created_at", "raw_material", "delta", "reason",
                     "related_object_type", "related_object_id", "created_by")
     list_filter = ("reason", "raw_material", "created_at")

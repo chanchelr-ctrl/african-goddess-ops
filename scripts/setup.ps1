@@ -58,10 +58,12 @@ Get-Content .\.env | ForEach-Object {
     if ($_ -match '^([^=]+)=(.*)$') { Set-Item -Path "Env:$($matches[1])" -Value $matches[2] }
 }
 
-# 5. Run migrations
-Write-Host "[5/6] Setting up the database..." -ForegroundColor Yellow
+# 5. Run migrations + collect static files (for production-style serving)
+Write-Host "[5/6] Setting up the database and static assets..." -ForegroundColor Yellow
 & .\.venv\Scripts\python.exe manage.py migrate --no-input
+& .\.venv\Scripts\python.exe manage.py collectstatic --no-input --clear | Out-Null
 Write-Host "   Database ready: db.sqlite3"
+Write-Host "   Static assets compiled: staticfiles\"
 
 # 6. Create superuser interactively
 Write-Host ""

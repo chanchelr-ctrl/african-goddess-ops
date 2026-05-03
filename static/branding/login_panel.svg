@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#A0522D"/>
+      <stop offset="60%" stop-color="#6E351A"/>
+      <stop offset="100%" stop-color="#2D1810"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FAF6F1" stop-opacity="0.95"/>
+      <stop offset="80%" stop-color="#F5EAD8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#F5EAD8" stop-opacity="0.7"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#bg)"/>
+
+  <!-- decorative concentric rings (subtle) -->
+  <circle cx="300" cy="320" r="260" fill="none" stroke="#FAF6F1" stroke-opacity="0.06" stroke-width="1"/>
+  <circle cx="300" cy="320" r="200" fill="none" stroke="#FAF6F1" stroke-opacity="0.08" stroke-width="1"/>
+  <circle cx="300" cy="320" r="140" fill="none" stroke="#FAF6F1" stroke-opacity="0.10" stroke-width="1"/>
+
+  <!-- crescent moon -->
+  <circle cx="290" cy="320" r="100" fill="url(#moon)"/>
+  <circle cx="320" cy="305" r="100" fill="url(#bg)"/>
+
+  <!-- wordmark -->
+  <text x="300" y="520" font-family="Georgia, 'Times New Roman', serif" font-size="46" fill="#FAF6F1" text-anchor="middle" font-weight="600">African Goddess</text>
+  <text x="300" y="555" font-family="Georgia, 'Times New Roman', serif" font-size="13" fill="#FAF6F1" fill-opacity="0.85" text-anchor="middle" font-style="italic" letter-spacing="4">SACRED  TOOLS  ·  OPERATIONS</text>
+
+  <!-- tagline -->
+  <text x="300" y="700" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#FAF6F1" fill-opacity="0.7" text-anchor="middle" font-style="italic">"Sacred Tools For Sacred Times"</text>
+</svg>
