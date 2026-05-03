@@ -6,11 +6,9 @@
 
 **Prerequisite:** Install Python 3.11+ from https://www.python.org/downloads/. During install, **check "Add Python to PATH"**.
 
-Open PowerShell in this folder and run:
+Then **double-click `setup.bat`** in this folder.
 
-```powershell
-.\scripts\setup.ps1
-```
+(Or open PowerShell here and run `.\scripts\setup.ps1` if your execution policy permits.)
 
 The script will:
 1. Create a Python virtual environment in `.venv\`
@@ -21,7 +19,7 @@ The script will:
 
 ## Daily use
 
-Double-click `scripts\start.ps1` (or run from PowerShell). The launcher opens a window — leave it open while you work — and your default browser at:
+**Double-click `start.bat`** in this folder. The launcher opens a window — leave it open while you work — and your default browser at:
 
 ```
 http://127.0.0.1:8000/
@@ -46,7 +44,7 @@ When you're done for the day, close the launcher window. Your work is saved in `
 
 ## Backups
 
-**Manual:** double-click `scripts\backup.ps1`.
+**Manual:** double-click `backup.bat` in this folder.
 
 **Automatic:** Task Scheduler is configured during setup to run `backup.ps1` daily. Backups go to `backups\db_YYYY-MM-DD_HHMM.sqlite3`. Recommended: copy this folder into a OneDrive-mirrored location for offsite redundancy.
 

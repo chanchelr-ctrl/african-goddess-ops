@@ -38,9 +38,9 @@ african-goddess-ops/
 
 | Task | Command |
 |---|---|
-| Start the app | `.\scripts\start.ps1` |
+| Start the app | `.\start.bat` (double-click) or `.\scripts\start.ps1` (PowerShell) |
 | Stop the app | Close the launcher window (or `Ctrl-C` in it) |
-| Manual backup | `.\scripts\backup.ps1` |
+| Manual backup | `.\backup.bat` (double-click) or `.\scripts\backup.ps1` (PowerShell) |
 | Check Django config | `.\.venv\Scripts\python.exe manage.py check` |
 | Run all tests | `.\.venv\Scripts\python.exe -m pytest` |
 | Open Django shell | `.\.venv\Scripts\python.exe manage.py shell` |
@@ -115,8 +115,14 @@ Until the consultant explicitly hands over to a salaried developer or the client
 
 ## Common-issue diagnostics
 
+### `start.ps1` "cannot be loaded because running scripts is disabled on this system"
+Windows default execution policy is `Restricted`. Two fixes:
+- **One-off:** `powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1`
+- **Permanent (per-user):** `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- **Best for end-users:** double-click `start.bat` instead — it wraps the .ps1 with `-ExecutionPolicy Bypass` already.
+
 ### "ImportError: couldn't import Django"
-Activate the venv: `.\.venv\Scripts\python.exe ...`. If the venv is missing, re-run `.\scripts\setup.ps1`.
+Activate the venv: `.\.venv\Scripts\python.exe ...`. If the venv is missing, re-run `.\setup.bat`.
 
 ### "Port 8000 in use"
 Another instance is already running, or another app is using the port. Kill it:

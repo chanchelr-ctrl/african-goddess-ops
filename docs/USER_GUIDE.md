@@ -4,10 +4,12 @@
 
 ## Daily start
 
-1. Double-click `start.ps1` in the project folder. A black window opens. **Leave it open while you work.**
+1. Double-click **`start.bat`** in the project folder. A black PowerShell window opens. **Leave it open while you work.**
 2. Your browser opens at `http://127.0.0.1:8000/`. If not, type that into the browser yourself.
 3. Sign in. The home page is the **Operations Dashboard**.
 4. When you're done, close the browser tab. To shut down the app fully, close the black window.
+
+> **Why `.bat` and not `.ps1`?** Windows blocks unsigned PowerShell scripts by default for safety. The `.bat` files are tiny wrappers that launch the real `.ps1` scripts with permission to run. You can ignore the technicality — just double-click `start.bat`.
 
 ## The 7 things you'll do most
 
@@ -132,7 +134,7 @@ CSV column requirements:
 
 Every day at 6pm (or whenever Task Scheduler is set), `backup.ps1` automatically copies your database to `backups\db_YYYY-MM-DD_HHMM.sqlite3`. The last 30 backups are kept; older ones are deleted automatically.
 
-To make a manual backup right now: double-click `backup.ps1` in the `scripts` folder.
+To make a manual backup right now: double-click `backup.bat` in the project folder.
 
 To restore from a backup:
 1. Close the app (close the black PowerShell window).
