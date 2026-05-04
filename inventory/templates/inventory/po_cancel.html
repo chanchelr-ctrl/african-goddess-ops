@@ -1,0 +1,58 @@
+{% extends "inventory/base.html" %}
+{% block title %}Cancel PO — {{ po.reference }}{% endblock %}
+{% block content %}
+{% with active="purchase" %}{% endwith %}
+
+<p><a href="/purchase/po/{{ po.pk }}/">← Back to {{ po.reference }}</a></p>
+<h1>Cancel purchase order</h1>
+<p style="color:var(--text-muted);">
+    You're about to cancel <strong>{{ po.reference }}</strong>
+    (currently <span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span>).
+    Read the impact below.
+</p>
+
+{% if to_remove %}
+<div class="banner alert">
+    ⚠ <strong>This PO was already received.</strong> Cancelling will <strong>remove the stock that was added on receipt</strong>
+    via ADJUSTMENT movements. Use this only if the goods were never actually received, or were returned.
+</div>
+
+<section class="card">
+    <div class="card-header"><h2>Stock that will be removed</h2></div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>SKU</th><th>Material</th><th>Current stock</th><th style="text-align:right;">Will remove</th><th style="text-align:right;">After cancel</th></tr></thead>
+            <tbody>
+            {% for x in to_remove %}
+                <tr>
+                    <td><code>{{ x.material.sku }}</code></td>
+                    <td>{{ x.material.name }}</td>
+                    <td>{{ x.current_stock }} <small>{{ x.material.unit }}</small></td>
+                    <td style="text-align:right;"><strong style="color:var(--alert);">−{{ x.qty }}</strong></td>
+                    <td style="text-align:right;">{{ x.current_stock|add:"-1"|add:x.qty|add:"1" }} <small>{{ x.material.unit }}</small></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="banner alert" style="margin-top:1rem;">
+    <strong>Heads up:</strong> if these materials have already been used in production since receipt,
+    your stock count will go negative or be wrong. Only cancel if reversing makes physical sense.
+</div>
+
+{% else %}
+<div class="banner success">
+    ✓ No stock was applied from this PO yet. Cancelling is safe — no stock will change.
+</div>
+{% endif %}
+
+<form method="post" action="/purchase/po/{{ po.pk }}/cancel/">
+    {% csrf_token %}
+    <div class="form-actions" style="margin-top:1.5rem;">
+        <button type="submit" class="btn" style="background:var(--alert);">Confirm cancel</button>
+        <a href="/purchase/po/{{ po.pk }}/" class="btn btn-ghost">Keep PO</a>
+    </div>
+</form>
+{% endblock %}

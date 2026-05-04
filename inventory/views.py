@@ -289,6 +289,62 @@ def project_complete(request, pk):
     return redirect("project_detail", pk=pk)
 
 
+@login_required
+def project_cancel(request, pk):
+    """Cancel a project. If any ProductionRuns were recorded, reverse the
+    stock they consumed via ADJUSTMENT movements (the original PRODUCTION_CONSUMED
+    movements stay — they're audit history). Two-step: GET shows confirm page
+    with what will be reversed; POST commits."""
+    from django.db import transaction
+    project = get_object_or_404(Project, pk=pk)
+    if project.status == "CANCELLED":
+        messages.info(request, "Project is already cancelled.")
+        return redirect("project_detail", pk=pk)
+
+    # Compute what will be reversed = sum of (BOM × run.quantity) per material
+    runs = list(project.production_runs.select_related("product_variant").all())
+    to_restore: dict[int, dict] = {}
+    for run in runs:
+        for line in run.product_variant.bom_lines.select_related("raw_material").all():
+            consumed = line.quantity * run.quantity
+            entry = to_restore.setdefault(line.raw_material_id, {
+                "material": line.raw_material,
+                "qty": Decimal("0"),
+            })
+            entry["qty"] += consumed
+
+    if request.method == "POST":
+        with transaction.atomic():
+            for entry in to_restore.values():
+                m = entry["material"]
+                qty = entry["qty"]
+                m.current_stock = m.current_stock + qty
+                m.save(update_fields=["current_stock", "updated_at"])
+                StockMovement.objects.create(
+                    raw_material=m, delta=qty, reason="ADJUSTMENT",
+                    related_object_type="Project", related_object_id=project.pk,
+                    note=f"Reversal: project '{project.name}' cancelled",
+                    created_by=request.user,
+                )
+            project.status = "CANCELLED"
+            project.save(update_fields=["status", "updated_at"])
+        if to_restore:
+            messages.success(
+                request,
+                f"Project cancelled. Restored {len(to_restore)} material(s) "
+                f"across {len(runs)} reversed production run(s).",
+            )
+        else:
+            messages.success(request, "Project cancelled (no production runs to reverse).")
+        return redirect("project_detail", pk=pk)
+
+    return render(request, "inventory/project_cancel.html", {
+        "project": project,
+        "runs": runs,
+        "to_restore": list(to_restore.values()),
+    })
+
+
 # ---------------------------------------------------------------------------
 # Purchase flow
 # ---------------------------------------------------------------------------
@@ -388,6 +444,59 @@ def po_mark_received(request, pk):
 # ---------------------------------------------------------------------------
 # Temu managed-browser helper (Playwright subprocess)
 # ---------------------------------------------------------------------------
+
+
+@login_required
+def po_cancel(request, pk):
+    """Cancel a PO. If status was RECEIVED, reverse the receipt with negative
+    ADJUSTMENT movements per line. Two-step confirm page."""
+    from django.db import transaction
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    if po.status == "CANCELLED":
+        messages.info(request, "PO is already cancelled.")
+        return redirect("po_detail", pk=pk)
+
+    # If RECEIVED, compute reversal lines
+    to_remove: list[dict] = []
+    if po.status == "RECEIVED":
+        for line in po.lines.select_related("raw_material").all():
+            qty_units = line.units_total
+            if qty_units <= 0:
+                continue
+            to_remove.append({
+                "material": line.raw_material,
+                "qty": qty_units,
+                "current_stock": line.raw_material.current_stock,
+            })
+
+    if request.method == "POST":
+        with transaction.atomic():
+            for entry in to_remove:
+                m = entry["material"]
+                qty = entry["qty"]
+                m.current_stock = m.current_stock - qty
+                m.save(update_fields=["current_stock", "updated_at"])
+                StockMovement.objects.create(
+                    raw_material=m, delta=-qty, reason="ADJUSTMENT",
+                    related_object_type="PurchaseOrder", related_object_id=po.pk,
+                    note=f"Reversal: PO {po.reference} receipt cancelled",
+                    created_by=request.user,
+                )
+            po.status = "CANCELLED"
+            po.save(update_fields=["status", "updated_at"])
+        if to_remove:
+            messages.success(
+                request,
+                f"PO {po.reference} cancelled. Reversed {len(to_remove)} material receipt(s).",
+            )
+        else:
+            messages.success(request, f"PO {po.reference} cancelled.")
+        return redirect("po_detail", pk=pk)
+
+    return render(request, "inventory/po_cancel.html", {
+        "po": po,
+        "to_remove": to_remove,
+    })
 
 
 @login_required

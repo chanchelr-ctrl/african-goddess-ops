@@ -83,9 +83,12 @@
 </section>
 
 {% if project.status != "COMPLETED" and project.status != "CANCELLED" %}
-<form method="post" action="/track/project/{{ project.pk }}/complete/" style="margin-top:1.5rem;">
-    {% csrf_token %}
-    <button type="submit" class="btn">Mark project complete →</button>
-</form>
+<div style="margin-top:1.5rem; display:flex; gap:0.75rem;">
+    <form method="post" action="/track/project/{{ project.pk }}/complete/">
+        {% csrf_token %}
+        <button type="submit" class="btn">Mark project complete →</button>
+    </form>
+    <a href="/track/project/{{ project.pk }}/cancel/" class="btn btn-ghost" style="border-color:var(--alert); color:var(--alert);">Cancel project</a>
+</div>
 {% endif %}
 {% endblock %}

@@ -15,6 +15,7 @@ urlpatterns = [
     path("track/project/<int:pk>/", views.project_detail, name="project_detail"),
     path("track/project/<int:pk>/run/", views.project_record_run, name="project_record_run"),
     path("track/project/<int:pk>/complete/", views.project_complete, name="project_complete"),
+    path("track/project/<int:pk>/cancel/", views.project_cancel, name="project_cancel"),
 
     # Purchase flow
     path("purchase/", views.purchase_index, name="purchase"),
@@ -22,6 +23,7 @@ urlpatterns = [
     path("purchase/po/<int:pk>/", views.po_detail, name="po_detail"),
     path("purchase/po/<int:pk>/sent/", views.po_mark_sent, name="po_mark_sent"),
     path("purchase/po/<int:pk>/received/", views.po_mark_received, name="po_mark_received"),
+    path("purchase/po/<int:pk>/cancel/", views.po_cancel, name="po_cancel"),
     path("purchase/po/<int:pk>/temu/", views.po_open_in_temu, name="po_open_in_temu"),
     path("purchase/po/<int:pk>/parse-receipt/", views.po_parse_receipt, name="po_parse_receipt"),
 

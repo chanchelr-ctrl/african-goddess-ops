@@ -97,4 +97,10 @@
     </div>
 </section>
 {% endif %}
+
+{% if po.status != "CANCELLED" %}
+<div style="margin-top:1.5rem;">
+    <a href="/purchase/po/{{ po.pk }}/cancel/" class="btn btn-ghost" style="border-color:var(--alert); color:var(--alert);">Cancel PO</a>
+</div>
+{% endif %}
 {% endblock %}
