@@ -1,0 +1,80 @@
+{% extends "inventory/base.html" %}
+{% block title %}Purchase — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="purchase" %}{% endwith %}
+
+<h1>Purchase</h1>
+<p style="color:var(--text-muted);">Materials below their reorder point. Tick the ones to include, then draft a PO.</p>
+
+<form method="post" action="/purchase/draft/">
+    {% csrf_token %}
+    <section class="card">
+        <div class="card-header">
+            <h2>Reorder candidates</h2>
+            {% if low_stock_items %}
+            <button type="submit" class="btn btn-sm">Draft PO from selected →</button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if low_stock_items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="check-all"></th>
+                        <th>SKU</th><th>Material</th><th>Stock</th><th>Reorder at</th>
+                        <th>Pack size</th><th>Suggest packs</th><th>Unit cost</th><th>Temu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for x in low_stock_items %}
+                    <tr>
+                        <td><input type="checkbox" name="sku" value="{{ x.material.sku }}" checked></td>
+                        <td><code>{{ x.material.sku }}</code></td>
+                        <td>{{ x.material.name }}</td>
+                        <td>{{ x.material.current_stock }}</td>
+                        <td>{{ x.material.reorder_point }}</td>
+                        <td>{{ x.material.pack_size }}</td>
+                        <td><strong>{{ x.packs }}</strong></td>
+                        <td>R&nbsp;{{ x.material.last_paid_unit_cost|floatformat:2 }}</td>
+                        <td><a href="{{ x.temu_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-temu">Find on Temu →</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">✓ Nothing below reorder point. Go make something.</div>
+            {% endif %}
+        </div>
+    </section>
+</form>
+
+<section class="card">
+    <div class="card-header"><h2>Open purchase orders</h2></div>
+    <div class="card-body">
+        {% if open_pos %}
+        <table>
+            <thead><tr><th>Reference</th><th>Supplier</th><th>Status</th><th>Temu order</th><th style="text-align:right;">Total</th></tr></thead>
+            <tbody>
+            {% for po in open_pos %}
+                <tr>
+                    <td><a href="/purchase/po/{{ po.pk }}/"><code>{{ po.reference }}</code></a></td>
+                    <td>{{ po.supplier.name }}</td>
+                    <td><span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span></td>
+                    <td>{{ po.temu_order_id|default:"—" }}</td>
+                    <td style="text-align:right;">R&nbsp;{{ po.total_cost|floatformat:2 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No open purchase orders.</div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+document.getElementById("check-all")?.addEventListener("change", function(e) {
+    document.querySelectorAll('input[name="sku"]').forEach(cb => cb.checked = e.target.checked);
+});
+</script>
+{% endblock %}

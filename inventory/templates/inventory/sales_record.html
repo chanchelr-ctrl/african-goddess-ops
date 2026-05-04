@@ -1,0 +1,57 @@
+{% extends "inventory/base.html" %}
+{% block title %}Record a sale — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="sales" %}{% endwith %}
+
+<p><a href="/sales/">← Back to Sales</a></p>
+<h1>Record a sale</h1>
+
+<section class="card">
+    <div class="card-body padded">
+        <form method="post" action="/sales/record/">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="variant">Sellable SKU</label>
+                <select name="variant" id="variant" required style="max-width:100%;">
+                    <option value="">— pick one —</option>
+                    {% for v in variants %}
+                        <option value="{{ v.sku }}">{{ v.sku }} — {{ v.product.name }} ({{ v.variant.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="qty">Quantity</label>
+                <input type="number" name="qty" id="qty" min="1" value="1">
+            </div>
+            <div class="form-row">
+                <label for="unit_price">Unit price (ZAR)</label>
+                <input type="number" name="unit_price" id="unit_price" step="0.01" min="0">
+            </div>
+            <div class="form-row">
+                <label for="channel">Channel</label>
+                <select name="channel" id="channel">
+                    <option value="WEBSITE">Website (DTC)</option>
+                    <option value="IN_PERSON">In person</option>
+                    <option value="SUGAR_BUSH">Sugar Bush</option>
+                    <option value="MARKET">Market / pop-up</option>
+                    <option value="WHOLESALE">Wholesale</option>
+                    <option value="GIFT">Gift / promo</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="customer_name">Customer name (optional)</label>
+                <input type="text" name="customer_name" id="customer_name">
+            </div>
+            <div class="form-row">
+                <label for="notes">Notes (optional)</label>
+                <textarea name="notes" id="notes" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Save sale →</button>
+                <a href="/sales/" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

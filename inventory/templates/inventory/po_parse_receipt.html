@@ -1,0 +1,63 @@
+{% extends "inventory/base.html" %}
+{% block title %}{{ po.reference }} — Parse Temu receipt{% endblock %}
+{% block content %}
+{% with active="purchase" %}{% endwith %}
+
+<p><a href="/purchase/po/{{ po.pk }}/">← Back to {{ po.reference }}</a></p>
+<h1>Parse Temu receipt</h1>
+<p style="color:var(--text-muted);">
+    After placing the order on Temu, paste the order confirmation email or copy the order page text below.
+    The app will try to extract the order ID and tracking number automatically.
+</p>
+
+<form method="post" action="/purchase/po/{{ po.pk }}/parse-receipt/">
+    {% csrf_token %}
+    <section class="card">
+        <div class="card-body padded">
+            <div class="form-row">
+                <label for="text">Pasted order text</label>
+                <textarea name="text" id="text" rows="12" style="max-width:100%; font-family:monospace; font-size:0.85rem;">{{ pasted }}</textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Parse →</button>
+                <a href="/purchase/po/{{ po.pk }}/" class="btn btn-ghost">Cancel</a>
+            </div>
+        </div>
+    </section>
+
+    {% if parsed %}
+    <section class="card">
+        <div class="card-header"><h2>Extracted</h2></div>
+        <div class="card-body padded">
+            <table>
+                <tbody>
+                    {% if parsed.order_id %}
+                    <tr><th style="text-align:left; padding:0.5rem 0;">Order ID</th><td><code>{{ parsed.order_id }}</code></td></tr>
+                    {% endif %}
+                    {% if parsed.tracking_number %}
+                    <tr><th style="text-align:left; padding:0.5rem 0;">Tracking</th><td><code>{{ parsed.tracking_number }}</code></td></tr>
+                    {% endif %}
+                    {% if parsed.total %}
+                    <tr><th style="text-align:left; padding:0.5rem 0;">Total</th><td>R&nbsp;{{ parsed.total|floatformat:2 }}</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+
+            {% if parsed.order_id %}
+                <p style="margin-top:1rem;">
+                    Apply this to <code>{{ po.reference }}</code> and mark as <strong>Sent</strong>?
+                </p>
+                <button type="submit" name="apply" value="1" class="btn">Yes, apply →</button>
+            {% else %}
+                <div class="banner alert" style="margin-top:1rem;">
+                    Couldn't find an order ID in the pasted text. Try copying more (incl. the line "Order ID: ...") or set it manually on the PO page.
+                </div>
+            {% endif %}
+        </div>
+    </section>
+    {% elif pasted %}
+    <div class="banner alert">No recognisable order details found. Paste the full email body or order page text.</div>
+    {% endif %}
+</form>
+
+{% endblock %}

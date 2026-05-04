@@ -6,3 +6,5 @@ waitress>=3.0
 pytest>=8.0
 pytest-django>=4.8
 python-dateutil>=2.8
+openpyxl>=3.1
+playwright>=1.49

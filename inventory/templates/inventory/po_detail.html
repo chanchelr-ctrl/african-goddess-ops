@@ -1,0 +1,100 @@
+{% extends "inventory/base.html" %}
+{% block title %}{{ po.reference }} — Purchase order{% endblock %}
+{% block content %}
+{% with active="purchase" %}{% endwith %}
+
+<p><a href="/purchase/">← Back to Purchase</a></p>
+<h1>{{ po.reference }}</h1>
+<p>
+    <span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span>
+    <small style="margin-left:0.5rem;">Supplier: <strong>{{ po.supplier.name }}</strong></small>
+</p>
+
+<section class="card">
+    <div class="card-header"><h2>Lines</h2><span class="meta">Total: <strong>R&nbsp;{{ po.total_cost|floatformat:2 }}</strong></span></div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>SKU</th><th>Material</th><th>Pack size</th><th>Packs</th><th>Units total</th><th>Unit cost</th><th>Line total</th><th>Temu</th></tr></thead>
+            <tbody>
+            {% for x in lines %}
+                <tr>
+                    <td><code>{{ x.line.raw_material.sku }}</code></td>
+                    <td>{{ x.line.raw_material.name }}</td>
+                    <td>{{ x.line.pack_size }}</td>
+                    <td>{{ x.line.pack_count }}</td>
+                    <td><strong>{{ x.line.units_total }}</strong></td>
+                    <td>R&nbsp;{{ x.line.unit_cost|floatformat:4 }}</td>
+                    <td>R&nbsp;{{ x.line.line_total|floatformat:2 }}</td>
+                    <td><a href="{{ x.temu_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-temu">Find on Temu →</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if po.status == "DRAFT" %}
+<section class="card">
+    <div class="card-header"><h2>Order on Temu</h2></div>
+    <div class="card-body padded">
+        <p style="color:var(--text-muted); font-size:0.9rem;">
+            Two ways to do this. Pick whichever feels easier.
+        </p>
+        <div style="display:grid; gap:1rem; grid-template-columns:1fr 1fr;">
+            <div style="background:var(--surface-2); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
+                <h3 style="margin-top:0;">A — Quick: open per-line tabs in your browser</h3>
+                <p style="font-size:0.85rem; color:var(--text-muted);">Use the "Find on Temu" buttons next to each line above. Add to cart, check out, then paste the receipt below.</p>
+            </div>
+            <div style="background:var(--surface-2); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
+                <h3 style="margin-top:0;">B — Managed: one Chromium with all lines pre-loaded</h3>
+                <p style="font-size:0.85rem; color:var(--text-muted);">Opens a separate Chromium window with one tab per line of this PO, all pre-searched. Login state persists between sessions.</p>
+                <form method="post" action="/purchase/po/{{ po.pk }}/temu/">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-temu">Open managed browser →</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header"><h2>Mark as sent to Temu</h2></div>
+    <div class="card-body padded">
+        <p style="color:var(--text-muted); font-size:0.9rem;">
+            After placing the order, you can either paste the order email here for auto-extraction,
+            or fill in the fields manually.
+        </p>
+
+        <p style="margin-bottom:1rem;">
+            <a href="/purchase/po/{{ po.pk }}/parse-receipt/" class="btn btn-ghost">Paste Temu order email → auto-extract</a>
+        </p>
+
+        <form method="post" action="/purchase/po/{{ po.pk }}/sent/">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="temu_order_id">Temu order ID (manual)</label>
+                <input type="text" name="temu_order_id" id="temu_order_id" placeholder="O...">
+            </div>
+            <div class="form-row">
+                <label for="tracking_number">Tracking number (optional)</label>
+                <input type="text" name="tracking_number" id="tracking_number">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Mark as sent →</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% elif po.status == "SENT" %}
+<section class="card">
+    <div class="card-header"><h2>Mark as received</h2></div>
+    <div class="card-body padded">
+        <p style="color:var(--text-muted); font-size:0.9rem;">Once the goods arrive, click the button below. Stock will be auto-incremented for each line.</p>
+        <form method="post" action="/purchase/po/{{ po.pk }}/received/">
+            {% csrf_token %}
+            <button type="submit" class="btn">Mark as received → pack stock onto shelves</button>
+        </form>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "inventory/base.html" %}
+{% block title %}Plan a build — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="build" %}{% endwith %}
+
+<h1>Plan a build</h1>
+<p style="color:var(--text-muted);">Choose the sellable SKU and how many units. We'll check stock and route you accordingly.</p>
+
+<section class="card">
+    <div class="card-body padded">
+        <form method="get" action="/build/check/">
+            <div style="display:grid; grid-template-columns: 1fr 150px auto; gap:1rem; align-items:end;">
+                <div class="form-row" style="margin-bottom:0;">
+                    <label for="variant">Sellable SKU</label>
+                    <select name="variant" id="variant" required style="max-width: 100%;">
+                        <option value="">— pick one —</option>
+                        {% for v in variants %}
+                            <option value="{{ v.sku }}" {% if selected_pv and selected_pv.sku == v.sku %}selected{% endif %}>
+                                {{ v.sku }} — {{ v.product.name }} ({{ v.variant.name }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row" style="margin-bottom:0;">
+                    <label for="qty">Quantity</label>
+                    <input type="number" name="qty" id="qty" min="1" value="{{ qty }}">
+                </div>
+                <button type="submit" class="btn">Check stock →</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+{% if selected_pv %}
+    {% if is_sufficient %}
+        <div class="banner success">
+            ✓ <strong>Sufficient stock.</strong> You can make {{ qty }} × {{ selected_pv.sku }} now.
+        </div>
+        <form method="post" action="/build/start/">
+            {% csrf_token %}
+            <input type="hidden" name="variant" value="{{ selected_pv.sku }}">
+            <input type="hidden" name="qty" value="{{ qty }}">
+            <div class="form-row">
+                <label for="name">Project name (optional)</label>
+                <input type="text" name="name" id="name" placeholder="e.g. {{ qty }} × {{ selected_pv.sku }} for Sugar Bush market">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Start project →</button>
+                <a href="/build/" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    {% else %}
+        <div class="banner alert">
+            ⚠ <strong>Not enough stock</strong> to make {{ qty }} × {{ selected_pv.sku }}.
+        </div>
+        <section class="card">
+            <div class="card-header"><h2>Material shortfalls</h2></div>
+            <div class="card-body">
+                <table>
+                    <thead><tr><th>SKU</th><th>Material</th><th>Need</th><th>Have</th><th style="text-align:right;">Short by</th></tr></thead>
+                    <tbody>
+                    {% for s in shortfalls %}
+                        <tr>
+                            <td><code>{{ s.material.sku }}</code></td>
+                            <td>{{ s.material.name }}</td>
+                            <td>{{ s.need }} <small>{{ s.material.unit }}</small></td>
+                            <td>{{ s.have }} <small>{{ s.material.unit }}</small></td>
+                            <td style="text-align:right;"><strong>{{ s.short }}</strong></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a href="/purchase/" class="btn">Go to Purchase →</a>
+            <a href="/build/" class="btn btn-ghost">Pick a different SKU</a>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

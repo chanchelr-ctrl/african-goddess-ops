@@ -12,6 +12,6 @@ admin.site.index_title = "Operations Dashboard"
 urlpatterns = [
     path("", login_required(inventory_views.dashboard), name="dashboard"),
     path("admin/", admin.site.urls),
-    path("inventory/", include("inventory.urls")),
+    path("", include("inventory.urls")),
     path("healthz/", inventory_views.healthz, name="healthz"),
 ]

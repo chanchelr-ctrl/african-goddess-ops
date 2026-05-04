@@ -1,0 +1,53 @@
+{% extends "inventory/base.html" %}
+{% block title %}Track — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="track" %}{% endwith %}
+
+<h1>Track projects</h1>
+
+<section class="card">
+    <div class="card-header"><h2>In flight</h2><a href="/build/" class="btn btn-sm">Start a new build →</a></div>
+    <div class="card-body">
+        {% if in_flight %}
+        <table>
+            <thead><tr><th>Name</th><th>Status</th><th>Planned</th><th>Made</th><th>Started</th></tr></thead>
+            <tbody>
+            {% for p in in_flight %}
+                <tr>
+                    <td><a href="/track/project/{{ p.pk }}/">{{ p.name }}</a></td>
+                    <td><span class="pill pill-status-{{ p.status|lower }}">{{ p.get_status_display }}</span></td>
+                    <td>{{ p.total_planned_units }}</td>
+                    <td>{{ p.total_made_units }}</td>
+                    <td>{{ p.started_at|date:"j M Y"|default:"—" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No projects in flight.</div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header"><h2>Recently completed</h2></div>
+    <div class="card-body">
+        {% if recent_completed %}
+        <table>
+            <thead><tr><th>Name</th><th>Made</th><th>Completed</th></tr></thead>
+            <tbody>
+            {% for p in recent_completed %}
+                <tr>
+                    <td><a href="/track/project/{{ p.pk }}/">{{ p.name }}</a></td>
+                    <td>{{ p.total_made_units }}</td>
+                    <td>{{ p.completed_at|date:"j M Y"|default:"—" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No completed projects yet.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

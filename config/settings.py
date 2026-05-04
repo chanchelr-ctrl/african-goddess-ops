@@ -223,27 +223,36 @@ UNFOLD = {
         "show_all_applications": False,
         "navigation": [
             {
-                "title": "Operations",
+                "title": "Workflows",
                 "separator": False,
                 "items": [
                     {"title": "Dashboard", "icon": "dashboard", "link": "/"},
+                    {"title": "Build", "icon": "construction", "link": "/build/"},
+                    {"title": "Track", "icon": "track_changes", "link": "/track/"},
+                    {"title": "Purchase", "icon": "local_shipping", "link": "/purchase/"},
+                    {"title": "Sales", "icon": "point_of_sale", "link": "/sales/"},
                 ],
             },
             {
                 "title": "Catalogue",
                 "separator": True,
                 "items": [
+                    {"title": "Brands", "icon": "label", "link": "/admin/inventory/brand/"},
                     {"title": "Products", "icon": "auto_awesome", "link": "/admin/inventory/product/"},
+                    {"title": "Variants (palettes)", "icon": "palette", "link": "/admin/inventory/variant/"},
+                    {"title": "Sellable SKUs", "icon": "qr_code_2", "link": "/admin/inventory/productvariant/"},
                     {"title": "Raw materials", "icon": "scatter_plot", "link": "/admin/inventory/rawmaterial/"},
                     {"title": "Suppliers", "icon": "store", "link": "/admin/inventory/supplier/"},
                 ],
             },
             {
-                "title": "Operations",
+                "title": "Records",
                 "separator": True,
                 "items": [
-                    {"title": "Production runs", "icon": "construction", "link": "/admin/inventory/productionrun/"},
-                    {"title": "Purchase orders", "icon": "local_shipping", "link": "/admin/inventory/purchaseorder/"},
+                    {"title": "Projects", "icon": "folder_open", "link": "/admin/inventory/project/"},
+                    {"title": "Production runs", "icon": "build", "link": "/admin/inventory/productionrun/"},
+                    {"title": "Purchase orders", "icon": "shopping_cart", "link": "/admin/inventory/purchaseorder/"},
+                    {"title": "Sales", "icon": "receipt_long", "link": "/admin/inventory/sale/"},
                     {"title": "Stock movements", "icon": "history", "link": "/admin/inventory/stockmovement/"},
                 ],
             },

@@ -27,6 +27,8 @@ Thumbs.db
 
 staticfiles/
 .django-unfold-cache/
+.playwright_temu_state.json
+ms-playwright/
 media/
 
 *.log

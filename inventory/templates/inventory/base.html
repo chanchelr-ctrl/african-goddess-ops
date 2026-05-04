@@ -1,0 +1,214 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}African Goddess — Operations{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="{% static 'branding/favicon.svg' %}">
+    <style>
+        :root {
+            --bg: #faf6f1; --surface: #ffffff; --surface-2: #fdfaf6;
+            --primary: #a0522d; --primary-dark: #6e351a; --primary-50: #fdf6eb;
+            --gold: #c9a35c; --sage: #6b8e5a;
+            --text: #2d1810; --text-muted: #6b5d52; --border: #e8ddd3;
+            --alert: #c0392b; --alert-bg: #fdecea;
+            --success: #2d6a3a; --success-bg: #dcebd8;
+            --shadow-sm: 0 1px 2px rgba(45,24,16,.05);
+            --shadow: 0 2px 8px rgba(45,24,16,.07);
+            --shadow-md: 0 4px 14px rgba(45,24,16,.08);
+            --radius: 10px;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+               background: var(--bg); color: var(--text); line-height: 1.55; font-size: 15px; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { color: var(--primary-dark); text-decoration: underline; }
+        h1, h2, h3 { font-family: Georgia, serif; font-weight: 600; letter-spacing: 0.3px; margin: 0 0 0.5rem; }
+        h1 { font-size: 1.75rem; }  h2 { font-size: 1.25rem; margin-top: 2rem; }  h3 { font-size: 1.05rem; }
+        small { color: var(--text-muted); }
+        code { background: var(--primary-50); color: var(--primary-dark); padding: 1px 6px; border-radius: 4px;
+               font-family: "SF Mono", Consolas, monospace; font-size: 0.85em; }
+        .page { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+        /* Hero header */
+        .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                color: var(--bg); padding: 1.25rem 0; box-shadow: var(--shadow-md); }
+        .hero-inner { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;
+                      display: flex; justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap; }
+        .hero-brand { display: flex; align-items: center; gap: 1rem; }
+        .hero-mark { width: 48px; height: 48px; background: rgba(250,246,241,.12); border-radius: 50%;
+                     position: relative; flex-shrink: 0; }
+        .hero-mark::before, .hero-mark::after { content: ""; position: absolute; border-radius: 50%; }
+        .hero-mark::before { width: 32px; height: 32px; background: var(--bg); top: 8px; left: 5px; }
+        .hero-mark::after { width: 32px; height: 32px; background: var(--primary-dark); top: 6px; left: 14px; }
+        .hero-titles h1 { color: var(--bg); margin: 0; font-size: 1.4rem; }
+        .hero-titles p { margin: 1px 0 0; font-style: italic; font-family: Georgia, serif;
+                         color: var(--bg); opacity: 0.8; font-size: 0.78rem; letter-spacing: 1.5px; }
+        .hero-meta { text-align: right; font-size: 0.85rem; }
+        .hero-meta a { color: var(--bg); opacity: 0.85;
+                       border-bottom: 1px dotted rgba(250,246,241,0.5); }
+
+        /* Top nav (process-flow verbs) */
+        .topnav { background: var(--surface); border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
+                  box-shadow: var(--shadow-sm); }
+        .topnav-inner { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;
+                        display: flex; gap: 0.25rem; flex-wrap: wrap; }
+        .topnav a { display: inline-block; padding: 0.85rem 1.1rem; color: var(--text);
+                    border-bottom: 3px solid transparent; font-weight: 500; font-size: 0.9rem; }
+        .topnav a:hover { background: var(--surface-2); color: var(--primary); text-decoration: none; }
+        .topnav a.active { color: var(--primary-dark); border-bottom-color: var(--primary); font-weight: 600; }
+
+        /* Cards */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+                box-shadow: var(--shadow-sm); margin-bottom: 1.5rem; overflow: hidden; }
+        .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+                       display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+        .card-header h2 { margin: 0; font-size: 1.05rem; }
+        .card-header .meta { font-size: 0.85rem; color: var(--text-muted); }
+        .card-body { padding: 0; }
+        .card-body.padded { padding: 1.25rem; }
+        .empty-state { padding: 2rem 1.25rem; text-align: center; color: var(--text-muted); font-style: italic; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead th { text-align: left; padding: 0.7rem 1.25rem; background: var(--surface-2);
+                   border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text-muted);
+                   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px; }
+        tbody td { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--surface-2); }
+
+        /* KPI tiles */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                    gap: 1rem; margin-bottom: 2rem; }
+        .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+               padding: 1.1rem; box-shadow: var(--shadow-sm); }
+        .kpi-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-50);
+                    color: var(--primary); display: flex; align-items: center; justify-content: center;
+                    margin-bottom: 0.6rem; }
+        .kpi-value { font-size: 1.75rem; font-weight: 600; font-family: Georgia, serif; line-height: 1; }
+        .kpi-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.35; }
+        .kpi.alert { border-color: rgba(192,57,43,.3); background: var(--alert-bg); }
+        .kpi.alert .kpi-icon { background: rgba(192,57,43,.12); color: var(--alert); }
+        .kpi.alert .kpi-value { color: var(--alert); }
+
+        /* Pills */
+        .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.7rem;
+                font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+        .pill-reorder { background: var(--alert); color: white; }
+        .pill-success { background: var(--success-bg); color: var(--success); }
+        .pill-status-draft { background: #f5e9d6; color: #8a6420; }
+        .pill-status-sent { background: #ddeaf3; color: #1f5375; }
+        .pill-status-received { background: #dcebd8; color: #2d6a3a; }
+        .pill-status-cancelled { background: #ece6e0; color: #5e4c40; }
+        .pill-status-planned { background: #f5e9d6; color: #8a6420; }
+        .pill-status-in_progress { background: #ddeaf3; color: #1f5375; }
+        .pill-status-completed { background: #dcebd8; color: #2d6a3a; }
+
+        /* Buttons */
+        .btn { display: inline-block; padding: 0.55rem 1.05rem; border-radius: 8px;
+               background: var(--primary); color: white; border: none; font-weight: 500;
+               font-size: 0.875rem; cursor: pointer; text-decoration: none; transition: background .12s; }
+        .btn:hover { background: var(--primary-dark); color: white; text-decoration: none; }
+        .btn-ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-ghost:hover { background: var(--primary-50); color: var(--primary-dark); }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+        .btn-temu { background: var(--gold); color: var(--text); }
+        .btn-temu:hover { background: #b8943c; color: var(--text); }
+
+        /* Forms */
+        input[type="text"], input[type="number"], input[type="date"], select, textarea {
+            padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.9rem; background: var(--surface); color: var(--text); width: 100%; max-width: 400px;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
+        label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;
+                font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+        .form-row { margin-bottom: 1rem; }
+        .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+
+        /* Messages */
+        .messages { margin: 1rem 0; }
+        .message { padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 0.5rem;
+                   border: 1px solid var(--border); background: var(--surface); }
+        .message.success { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+        .message.error { background: var(--alert-bg); border-color: var(--alert); color: var(--alert); }
+        .message.warning { background: #fcf2d8; border-color: #b8860b; color: #6b4f0a; }
+
+        /* Sufficiency banner */
+        .banner { padding: 1rem 1.25rem; border-radius: var(--radius); margin-bottom: 1rem;
+                  border: 1px solid var(--border); }
+        .banner.success { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+        .banner.alert { background: var(--alert-bg); border-color: var(--alert); color: var(--alert); }
+
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+                  color: var(--text-muted); font-size: 0.8rem; text-align: center; }
+        .footer-mark { font-family: Georgia, serif; font-style: italic; color: var(--primary); }
+
+        @media (max-width: 720px) {
+            .hero-inner { flex-direction: column; align-items: flex-start; }
+            .hero-meta { text-align: left; }
+            .topnav-inner { padding: 0 0.5rem; }
+            .topnav a { padding: 0.6rem 0.7rem; font-size: 0.85rem; }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="hero">
+        <div class="hero-inner">
+            <a href="/" style="display:flex; align-items:center; gap:1rem; color:inherit; text-decoration:none;">
+                <span class="hero-mark" aria-hidden="true"></span>
+                <span class="hero-titles">
+                    <h1>African Goddess</h1>
+                    <p>SACRED  TOOLS  ·  OPERATIONS</p>
+                </span>
+            </a>
+            <div class="hero-meta">
+                <div>{% now "l, j F Y" %}</div>
+                <div style="margin-top:4px;">
+                    <a href="/admin/">Admin</a>
+                    <span style="margin:0 6px; opacity:.4;">·</span>
+                    <a href="/admin/logout/">Sign out</a>
+                </div>
+                {% if request.user.is_authenticated %}
+                <div style="margin-top:4px; opacity:.75; font-size:0.78rem;">
+                    Signed in as <strong>{{ request.user.username }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <a href="/" class="{% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/build/" class="{% if active == 'build' %}active{% endif %}">Build</a>
+            <a href="/track/" class="{% if active == 'track' %}active{% endif %}">Track</a>
+            <a href="/purchase/" class="{% if active == 'purchase' %}active{% endif %}">Purchase</a>
+            <a href="/sales/" class="{% if active == 'sales' %}active{% endif %}">Sales</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        {% if messages %}
+        <div class="messages">
+            {% for m in messages %}
+                <div class="message {{ m.tags }}">{{ m }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+
+        <footer class="footer">
+            <span class="footer-mark">"Sacred Tools For Sacred Times"</span><br>
+            <span style="margin-top:.5rem; display:inline-block;">
+                African Goddess Operations  ·  v0.2.0
+                {% if request.user.is_authenticated %}  ·  Signed in as {{ request.user.username }}{% endif %}
+            </span>
+        </footer>
+    </main>
+</body>
+</html>

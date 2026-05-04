@@ -1,0 +1,47 @@
+{% extends "inventory/base.html" %}
+{% block title %}Build — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="build" %}{% endwith %}
+
+<h1>Build</h1>
+<p style="color:var(--text-muted);">Pick what you'd like to build. We'll check stock and either start the project or route you to purchase.</p>
+
+<div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+    <a href="/build/check/" class="btn">Plan a new build →</a>
+    <a href="/admin/inventory/productvariant/" class="btn btn-ghost">Browse all sellable SKUs</a>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2>What you can build right now</h2>
+        <span class="meta">based on current raw-material stock</span>
+    </div>
+    <div class="card-body">
+        {% if can_make %}
+        <table>
+            <thead><tr><th>SKU</th><th>Product</th><th>Variant</th><th style="text-align:right;">Can make</th><th></th></tr></thead>
+            <tbody>
+            {% for x in can_make %}
+                <tr>
+                    <td><code>{{ x.pv.sku }}</code></td>
+                    <td>{{ x.pv.product.name }}</td>
+                    <td>{{ x.pv.variant.name }}</td>
+                    <td style="text-align:right;"><strong>{{ x.can_make }}</strong></td>
+                    <td><a href="/build/check/?variant={{ x.pv.sku }}&qty=1" class="btn btn-sm">Plan →</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No SKUs are buildable from current stock. Either bring in raw materials via <a href="/purchase/">Purchase</a>, or plan a build that triggers reorder.</div>
+        {% endif %}
+    </div>
+</section>
+
+{% if cannot_make_count %}
+<p style="color:var(--text-muted); font-size:.85rem;">
+    {{ cannot_make_count }} other SKU{{ cannot_make_count|pluralize }} cannot be built from current stock.
+    <a href="/build/check/">Plan one anyway →</a> (we'll route you to purchase the gaps.)
+</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "inventory/base.html" %}
+{% block title %}{{ project.name }} — Project{% endblock %}
+{% block content %}
+{% with active="track" %}{% endwith %}
+
+<p><a href="/track/">← All projects</a></p>
+<h1>{{ project.name }}</h1>
+<p>
+    <span class="pill pill-status-{{ project.status|lower }}">{{ project.get_status_display }}</span>
+    <small style="margin-left:0.5rem;">{{ project.total_made_units }} of {{ project.total_planned_units }} units made</small>
+</p>
+
+{% if shortfalls %}
+<div class="banner alert">
+    ⚠ <strong>Stock shortfalls</strong> remain for this project.
+    <a href="/purchase/" style="color:inherit; text-decoration:underline;">Go to Purchase →</a>
+</div>
+<section class="card">
+    <div class="card-header"><h2>Aggregate shortfalls</h2></div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>Material</th><th>Need</th><th>Have</th><th>Short by</th></tr></thead>
+            <tbody>
+                {% for s in shortfalls %}
+                <tr>
+                    <td><code>{{ s.material.sku }}</code> — {{ s.material.name }}</td>
+                    <td>{{ s.need }}</td>
+                    <td>{{ s.have }}</td>
+                    <td><strong>{{ s.short }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<section class="card">
+    <div class="card-header"><h2>Items</h2></div>
+    <div class="card-body">
+        <table>
+            <thead><tr><th>SKU</th><th>Planned</th><th>Made</th><th>Remaining</th><th></th></tr></thead>
+            <tbody>
+            {% for it in items %}
+                <tr>
+                    <td><code>{{ it.product_variant.sku }}</code> — {{ it.product_variant.product.name }}</td>
+                    <td>{{ it.quantity_planned }}</td>
+                    <td>{{ it.quantity_made }}</td>
+                    <td>{{ it.remaining }}</td>
+                    <td>
+                        {% if it.remaining > 0 %}
+                        <form method="post" action="/track/project/{{ project.pk }}/run/" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="item_id" value="{{ it.pk }}">
+                            <input type="number" name="qty" min="1" max="{{ it.remaining }}" value="1" style="width:70px; max-width:70px;">
+                            <button type="submit" class="btn btn-sm">Record run</button>
+                        </form>
+                        {% else %}<span style="color:var(--success);">✓ Done</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header"><h2>Production history</h2></div>
+    <div class="card-body">
+        {% if runs %}
+        <table>
+            <thead><tr><th>Date</th><th>SKU</th><th>Quantity</th></tr></thead>
+            <tbody>
+            {% for r in runs %}
+                <tr><td>{{ r.run_date }}</td><td><code>{{ r.product_variant.sku }}</code></td><td>{{ r.quantity }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No production yet for this project.</div>
+        {% endif %}
+    </div>
+</section>
+
+{% if project.status != "COMPLETED" and project.status != "CANCELLED" %}
+<form method="post" action="/track/project/{{ project.pk }}/complete/" style="margin-top:1.5rem;">
+    {% csrf_token %}
+    <button type="submit" class="btn">Mark project complete →</button>
+</form>
+{% endif %}
+{% endblock %}

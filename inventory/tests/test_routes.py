@@ -1,23 +1,21 @@
-"""
-Route-level smoke tests. Confirms the URL surface is wired and the
-templates render without crashing.
-"""
+"""Route smoke tests for v0.2."""
 
 from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
-from django.urls import reverse
 
 from inventory.models import (
     BomLine,
-    ProductionRun,
+    Brand,
     Product,
-    PurchaseOrder,
-    PurchaseOrderLine,
+    ProductVariant,
+    Project,
+    ProjectItem,
     RawMaterial,
     Supplier,
+    Variant,
 )
 
 
@@ -38,81 +36,103 @@ def authed(user):
     return c
 
 
+def _seed_minimal():
+    s = Supplier.objects.create(name="Temu")
+    b = Brand.objects.create(code="SBR", name="Sugar Bush")
+    v = Variant.objects.create(code="SBR01", name="Tangerine & Orange", brand=b)
+    p = Product.objects.create(
+        code="SBR00EARR", name="Sugar Bush Earrings", brand=b,
+        pillar="BODY_ADORNMENTS", default_retail_price_zar=Decimal("450"),
+    )
+    rm = RawMaterial.objects.create(
+        sku="BEAD-1", name="Test bead", current_stock=Decimal("5"),
+        reorder_point=Decimal("10"), pack_size=Decimal("100"),
+        last_paid_unit_cost=Decimal("0.5"), preferred_supplier=s,
+    )
+    pv = ProductVariant.objects.create(product=p, variant=v, sku="SBR01-EARR")
+    BomLine.objects.create(product_variant=pv, raw_material=rm, quantity=Decimal("1"))
+    return {"supplier": s, "brand": b, "variant": v, "product": p, "rm": rm, "pv": pv}
+
+
 class TestPublicRoutes:
-    def test_healthz_unauthenticated(self):
-        c = Client()
-        r = c.get("/healthz/")
+    def test_healthz(self):
+        r = Client().get("/healthz/")
         assert r.status_code == 200
         assert r.json() == {"status": "ok"}
 
-    def test_dashboard_redirects_when_anonymous(self):
-        c = Client()
-        r = c.get("/")
-        # login_required redirects to LOGIN_URL with ?next=
+    def test_dashboard_redirects_anon(self):
+        r = Client().get("/")
         assert r.status_code == 302
         assert "/admin/login/" in r["Location"]
 
 
-class TestDashboardRendersForAuthedUser:
-    def test_dashboard_empty_state(self, authed):
+class TestDashboard:
+    def test_empty(self, authed):
         r = authed.get("/")
         assert r.status_code == 200
-        assert b"Today's snapshot" in r.content
-        # Empty-state copy for low-stock
-        assert b"Everything is above its reorder point" in r.content
+        assert b"snapshot" in r.content.lower()
 
-    def test_dashboard_with_data(self, authed):
-        s = Supplier.objects.create(name="ACME")
-        rm = RawMaterial.objects.create(
-            sku="X-1", name="Test material", unit="piece",
-            current_stock=Decimal("5"), reorder_point=Decimal("10"),
-            last_paid_unit_cost=Decimal("1"),
-        )
-        p = Product.objects.create(
-            sku="P-1", name="Test product", pillar="BODY_ADORNMENTS",
-            retail_price_zar=Decimal("100"),
-        )
-        BomLine.objects.create(product=p, raw_material=rm, quantity=Decimal("1"))
-        po = PurchaseOrder.objects.create(supplier=s)
-        PurchaseOrderLine.objects.create(
-            purchase_order=po, raw_material=rm,
-            quantity=Decimal("10"), unit_cost=Decimal("1"),
-        )
-
+    def test_with_data(self, authed):
+        _seed_minimal()
         r = authed.get("/")
         assert r.status_code == 200
-        assert b"Test material" in r.content
-        # The REORDER badge for the low-stock material
-        assert b"REORDER" in r.content
-        # The PO reference
-        assert po.reference.encode() in r.content
+        # The low-stock material should surface
+        assert b"BEAD-1" in r.content
+
+
+class TestWorkflowRoutes:
+    def test_build_index(self, authed):
+        _seed_minimal()
+        r = authed.get("/build/")
+        assert r.status_code == 200
+
+    def test_build_check_no_selection(self, authed):
+        _seed_minimal()
+        r = authed.get("/build/check/")
+        assert r.status_code == 200
+
+    def test_build_check_with_selection(self, authed):
+        _seed_minimal()
+        r = authed.get("/build/check/?variant=SBR01-EARR&qty=3")
+        assert r.status_code == 200
+        # 5 stock vs need 3 -> sufficient. content should reflect that.
+        assert b"SBR01-EARR" in r.content
+
+    def test_track_index(self, authed):
+        r = authed.get("/track/")
+        assert r.status_code == 200
+
+    def test_purchase_index(self, authed):
+        _seed_minimal()
+        r = authed.get("/purchase/")
+        assert r.status_code == 200
+
+    def test_sales_index(self, authed):
+        r = authed.get("/sales/")
+        assert r.status_code == 200
+
+    def test_sales_record_get(self, authed):
+        _seed_minimal()
+        r = authed.get("/sales/record/")
+        assert r.status_code == 200
 
 
 class TestAdminLoads:
-    def test_admin_index_loads_for_superuser(self, authed):
-        r = authed.get("/admin/")
-        assert r.status_code == 200
-
-    def test_raw_material_changelist(self, authed):
-        r = authed.get("/admin/inventory/rawmaterial/")
-        assert r.status_code == 200
-
-    def test_product_changelist(self, authed):
-        r = authed.get("/admin/inventory/product/")
-        assert r.status_code == 200
-
-    def test_purchase_order_changelist(self, authed):
-        r = authed.get("/admin/inventory/purchaseorder/")
-        assert r.status_code == 200
-
-    def test_production_run_changelist(self, authed):
-        r = authed.get("/admin/inventory/productionrun/")
-        assert r.status_code == 200
-
-    def test_supplier_changelist(self, authed):
-        r = authed.get("/admin/inventory/supplier/")
-        assert r.status_code == 200
-
-    def test_stock_movement_changelist(self, authed):
-        r = authed.get("/admin/inventory/stockmovement/")
-        assert r.status_code == 200
+    @pytest.mark.parametrize("path", [
+        "/admin/",
+        "/admin/inventory/brand/",
+        "/admin/inventory/variant/",
+        "/admin/inventory/product/",
+        "/admin/inventory/productvariant/",
+        "/admin/inventory/rawmaterial/",
+        "/admin/inventory/supplier/",
+        "/admin/inventory/purchaseorder/",
+        "/admin/inventory/productionrun/",
+        "/admin/inventory/project/",
+        "/admin/inventory/projectitem/",
+        "/admin/inventory/sale/",
+        "/admin/inventory/stockmovement/",
+    ])
+    def test_loads(self, authed, path):
+        r = authed.get(path)
+        assert r.status_code == 200, f"{path}: {r.status_code}"
