@@ -55,9 +55,26 @@ from .models import (
 
 TEMU_SEARCH_URL_TEMPLATE = "https://www.temu.com/search_result.html?search_key={q}"
 
+# Cap on material-name length appended to the SKU. Keeps the Temu search box
+# readable and avoids over-specific queries that return zero results.
+TEMU_NAME_MAX = 80
 
-def temu_search_url(query: str) -> str:
-    return TEMU_SEARCH_URL_TEMPLATE.format(q=quote_plus(query or ""))
+
+def temu_search_key(material) -> str:
+    """Build the Temu search query: '<SKU> <material name>' (name truncated).
+
+    Falls back to just the SKU if the material has no name."""
+    name = (getattr(material, "name", "") or "").strip()
+    if not name:
+        return material.sku
+    if len(name) > TEMU_NAME_MAX:
+        name = name[:TEMU_NAME_MAX].rstrip()
+    return f"{material.sku} {name}"
+
+
+def temu_search_url(material) -> str:
+    """URL for opening Temu pre-loaded with a search for this material."""
+    return TEMU_SEARCH_URL_TEMPLATE.format(q=quote_plus(temu_search_key(material)))
 
 
 # ---------------------------------------------------------------------------
@@ -288,7 +305,7 @@ def purchase_index(request):
         items.append({
             "material": m,
             "packs": m.packs_to_purchase,
-            "temu_url": temu_search_url(m.sku),
+            "temu_url": temu_search_url(m),
         })
     open_pos = PurchaseOrder.objects.filter(
         status__in=("DRAFT", "SENT")
@@ -341,7 +358,7 @@ def po_detail(request, pk):
     for ln in po.lines.select_related("raw_material").all():
         lines.append({
             "line": ln,
-            "temu_url": temu_search_url(ln.raw_material.sku),
+            "temu_url": temu_search_url(ln.raw_material),
         })
     return render(request, "inventory/po_detail.html", {"po": po, "lines": lines})
 

@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from inventory.models import PurchaseOrder, RawMaterial
+from inventory.views import temu_search_key
 
 
 STATE_FILE = Path(settings.BASE_DIR) / ".playwright_temu_state.json"
@@ -68,7 +69,7 @@ class Command(BaseCommand):
             except RawMaterial.DoesNotExist:
                 queries = [(sku, sku)]
             else:
-                queries = [(f"{m.sku} — {m.name[:40]}", m.sku)]
+                queries = [(f"{m.sku} — {m.name[:40]}", temu_search_key(m))]
         else:
             ref = options["po"]
             try:
@@ -77,7 +78,7 @@ class Command(BaseCommand):
                 raise CommandError(f"PO not found: {ref}")
             for line in po.lines.select_related("raw_material").all():
                 rm = line.raw_material
-                queries.append((f"{rm.sku} — {rm.name[:40]}", rm.sku))
+                queries.append((f"{rm.sku} — {rm.name[:40]}", temu_search_key(rm)))
 
         if not queries:
             raise CommandError("Nothing to search.")
