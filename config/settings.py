@@ -169,9 +169,9 @@ CURRENCY_SYMBOL = "R"
 # Inspired by African Goddess's "Sacred Tools For Sacred Times" positioning.
 
 UNFOLD = {
-    "SITE_TITLE": "African Goddess — Operations",
+    "SITE_TITLE": "African Goddess Curated — Operations",
     "SITE_HEADER": "African Goddess",
-    "SITE_SUBHEADER": "Operations",
+    "SITE_SUBHEADER": "Curated · Operations",
     "SITE_SYMBOL": "auto_awesome",  # Material icon name
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": False,
@@ -182,40 +182,41 @@ UNFOLD = {
     "STYLES": [
         lambda r: "/static/branding/unfold-overrides.css",
     ],
+    # Refined wellness-earth palette. Pending exact hex codes from client.
     "COLORS": {
         "base": {
-            "50": "250 246 241",   # warm cream
-            "100": "245 238 230",
-            "200": "232 221 211",
-            "300": "199 184 170",
-            "400": "144 127 113",
-            "500": "107 93 82",
-            "600": "78 65 55",
-            "700": "63 50 41",
-            "800": "45 24 16",
-            "900": "30 16 11",
-            "950": "20 11 7",
+            "50":  "250 245 235",   # parchment cream
+            "100": "245 235 218",
+            "200": "235 223 202",
+            "300": "204 184 159",
+            "400": "150 128 105",
+            "500": "122 101 87",    # warm taupe
+            "600": "92 70 56",
+            "700": "70 51 39",
+            "800": "58 36 24",      # warm charcoal
+            "900": "40 24 16",
+            "950": "26 16 10",
         },
         "primary": {
-            "50": "253 246 235",   # cream-tinged amber
-            "100": "250 234 211",
-            "200": "243 213 169",
-            "300": "232 187 121",
-            "400": "210 149 76",
-            "500": "160 82 45",    # terracotta — brand primary
-            "600": "139 68 35",
-            "700": "110 53 26",
-            "800": "79 38 19",
-            "900": "61 28 14",
-            "950": "45 20 10",
+            "50":  "251 240 225",
+            "100": "245 233 217",   # tinted cream
+            "200": "232 207 175",
+            "300": "212 173 134",
+            "400": "183 137 100",
+            "500": "156 107 79",    # dusty clay — brand primary
+            "600": "133 86 60",
+            "700": "107 63 42",     # deep cocoa
+            "800": "82 47 30",
+            "900": "61 32 19",
+            "950": "40 20 12",
         },
         "font": {
-            "subtle-light": "107 93 82",
-            "subtle-dark": "199 184 170",
-            "default-light": "63 50 41",
-            "default-dark": "245 238 230",
-            "important-light": "45 24 16",
-            "important-dark": "250 246 241",
+            "subtle-light": "122 101 87",
+            "subtle-dark":  "204 184 159",
+            "default-light": "70 51 39",
+            "default-dark":  "245 235 218",
+            "important-light": "58 36 24",
+            "important-dark":  "250 245 235",
         },
     },
     "SIDEBAR": {

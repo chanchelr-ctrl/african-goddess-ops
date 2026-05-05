@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" width="360" height="80">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="380" height="90">
   <!-- crescent moon mark -->
-  <circle cx="36" cy="40" r="22" fill="#A0522D"/>
-  <circle cx="44" cy="36" r="22" fill="#FAF6F1"/>
+  <circle cx="36" cy="45" r="22" fill="#9c6b4f"/>
+  <circle cx="44" cy="41" r="22" fill="#f7efe1"/>
   <!-- wordmark -->
-  <text x="80" y="44" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#2D1810" font-weight="600" letter-spacing="0.5">African Goddess</text>
-  <text x="80" y="62" font-family="Georgia, 'Times New Roman', serif" font-size="9.5" fill="#A0522D" font-style="italic" letter-spacing="3.5">SACRED  TOOLS  ·  OPERATIONS</text>
+  <text x="80" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#3a2418" font-weight="500" letter-spacing="0.8">African Goddess</text>
+  <text x="80" y="65" font-family="Georgia, 'Times New Roman', serif" font-size="9" fill="#9c6b4f" font-style="italic" letter-spacing="3.2">CURATED  ·  ENERGETICALLY  CONSCIOUS</text>
 </svg>

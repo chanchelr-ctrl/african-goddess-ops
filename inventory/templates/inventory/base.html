@@ -6,16 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/svg+xml" href="{% static 'branding/favicon.svg' %}">
     <style>
+        /* African Goddess brand palette (refined wellness earth tones).
+           Pixel-exact hex codes pending logo file + brand-guide hex from client. */
         :root {
-            --bg: #faf6f1; --surface: #ffffff; --surface-2: #fdfaf6;
-            --primary: #a0522d; --primary-dark: #6e351a; --primary-50: #fdf6eb;
-            --gold: #c9a35c; --sage: #6b8e5a;
-            --text: #2d1810; --text-muted: #6b5d52; --border: #e8ddd3;
-            --alert: #c0392b; --alert-bg: #fdecea;
-            --success: #2d6a3a; --success-bg: #dcebd8;
-            --shadow-sm: 0 1px 2px rgba(45,24,16,.05);
-            --shadow: 0 2px 8px rgba(45,24,16,.07);
-            --shadow-md: 0 4px 14px rgba(45,24,16,.08);
+            --bg: #faf5eb;            /* warm parchment */
+            --surface: #ffffff;
+            --surface-2: #fbf5e7;     /* slightly warmer cream */
+            --primary: #9c6b4f;       /* dusty clay */
+            --primary-dark: #6b3f2a;  /* deep cocoa */
+            --primary-50: #f5e9d9;    /* tinted cream */
+            --gold: #c9a35c;          /* muted gold accent */
+            --sage: #7a9572;          /* sage accent (sustainability) */
+            --text: #3a2418;          /* warm charcoal */
+            --text-muted: #7a6557;    /* warm taupe */
+            --border: #ebdfca;        /* parchment edge */
+            --alert: #b34738;         /* deep terracotta-red */
+            --alert-bg: #fbeae5;
+            --success: #4d7a4d;
+            --success-bg: #e3eedd;
+            --shadow-sm: 0 1px 2px rgba(58,36,24,.05);
+            --shadow: 0 2px 8px rgba(58,36,24,.07);
+            --shadow-md: 0 4px 14px rgba(58,36,24,.08);
             --radius: 10px;
         }
         * { box-sizing: border-box; }
@@ -41,9 +52,9 @@
         .hero-mark::before, .hero-mark::after { content: ""; position: absolute; border-radius: 50%; }
         .hero-mark::before { width: 32px; height: 32px; background: var(--bg); top: 8px; left: 5px; }
         .hero-mark::after { width: 32px; height: 32px; background: var(--primary-dark); top: 6px; left: 14px; }
-        .hero-titles h1 { color: var(--bg); margin: 0; font-size: 1.4rem; }
-        .hero-titles p { margin: 1px 0 0; font-style: italic; font-family: Georgia, serif;
-                         color: var(--bg); opacity: 0.8; font-size: 0.78rem; letter-spacing: 1.5px; }
+        .hero-titles h1 { color: var(--bg); margin: 0; font-size: 1.5rem; font-weight: 500; letter-spacing: 0.8px; }
+        .hero-titles p { margin: 2px 0 0; font-style: italic; font-family: Georgia, serif;
+                         color: var(--bg); opacity: 0.78; font-size: 0.75rem; letter-spacing: 3px; }
         .hero-meta { text-align: right; font-size: 0.85rem; }
         .hero-meta a { color: var(--bg); opacity: 0.85;
                        border-bottom: 1px dotted rgba(250,246,241,0.5); }
@@ -162,7 +173,7 @@
                 <span class="hero-mark" aria-hidden="true"></span>
                 <span class="hero-titles">
                     <h1>African Goddess</h1>
-                    <p>SACRED  TOOLS  ·  OPERATIONS</p>
+                    <p>CURATED  ·  ENERGETICALLY  CONSCIOUS</p>
                 </span>
             </a>
             <div class="hero-meta">
@@ -203,9 +214,12 @@
         {% block content %}{% endblock %}
 
         <footer class="footer">
-            <span class="footer-mark">"Sacred Tools For Sacred Times"</span><br>
-            <span style="margin-top:.5rem; display:inline-block;">
-                African Goddess Operations  ·  v0.2.0
+            <span class="footer-mark">Your sanctuary for energetically conscious products</span><br>
+            <span style="margin-top:.4rem; display:inline-block; font-style:italic; color:var(--primary);">
+                "Sacred Tools For Sacred Times"
+            </span><br>
+            <span style="margin-top:.6rem; display:inline-block;">
+                African Goddess Curated  ·  Operations  ·  v0.2.1
                 {% if request.user.is_authenticated %}  ·  Signed in as {{ request.user.username }}{% endif %}
             </span>
         </footer>

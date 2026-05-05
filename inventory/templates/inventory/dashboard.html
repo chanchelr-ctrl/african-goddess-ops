@@ -3,8 +3,8 @@
 {% block content %}
 {% with active="dashboard" %}{% endwith %}
 
-<h1>Today's snapshot</h1>
-<p style="color:var(--text-muted); margin-top:0;">An at-a-glance view of what needs your attention right now.</p>
+<h1 style="font-family:Georgia, serif; font-weight:500; letter-spacing:0.5px;">Today's snapshot</h1>
+<p style="color:var(--text-muted); margin-top:0; font-style:italic;">An at-a-glance view of what needs your attention right now.</p>
 
 <div class="kpi-grid">
     <div class="kpi {% if low_stock_count %}alert{% endif %}">
