@@ -302,9 +302,27 @@ class Command(BaseCommand):
             raw_sku = row[sku_idx] if sku_idx < len(row) else None
             if not raw_sku:
                 continue
-            sku = str(raw_sku).strip()
-            if not sku:
+            base_sku = str(raw_sku).strip()
+            if not base_sku:
                 continue
+
+            # Disambiguate by size + colour: each spreadsheet row = its own
+            # material. Supplier listing IDs cover multiple sizes; some size
+            # buckets cover multiple colours. Treat each combo as distinct.
+            def _tok(name: str) -> str:
+                idx = col_map.get(name)
+                if idx is None or idx >= len(row):
+                    return ""
+                v = row[idx]
+                if v in (None, ""):
+                    return ""
+                return re.sub(r"[^a-zA-Z0-9]+", "_", str(v).strip()).strip("_")
+
+            sku = base_sku
+            for tok in (_tok("ITEM SIZE"), _tok("COLOUR:") or _tok("COLOUR")):
+                if tok:
+                    sku = f"{sku}_{tok}"
+            sku = sku[:64]
 
             # ----- Material upsert -----
             material = self._upsert_material(row, col_map, sku)
