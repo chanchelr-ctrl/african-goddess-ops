@@ -731,39 +731,3 @@ class DataChangeLog(models.Model):
                 f"({self.sku or self.object_pk})")
 
 
-class Sale(models.Model):
-    CHANNEL_CHOICES = [
-        ("WEBSITE", "Website (DTC)"),
-        ("IN_PERSON", "In person"),
-        ("SUGAR_BUSH", "Sugar Bush"),
-        ("MARKET", "Market / pop-up"),
-        ("WHOLESALE", "Wholesale"),
-        ("GIFT", "Gift / promo"),
-        ("OTHER", "Other"),
-    ]
-
-    sale_date = models.DateField(default=timezone.localdate, db_index=True)
-    product_variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT,
-                                        related_name="sales")
-    quantity = models.PositiveIntegerField(default=1)
-    unit_price_zar = models.DecimalField(max_digits=12, decimal_places=2)
-    channel = models.CharField(max_length=16, choices=CHANNEL_CHOICES, default="WEBSITE",
-                               db_index=True)
-    customer_name = models.CharField(max_length=200, blank=True)
-    notes = models.TextField(blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="sales",
-    )
-
-    class Meta:
-        ordering = ("-sale_date", "-created_at")
-
-    def __str__(self) -> str:
-        return f"{self.sale_date}: {self.quantity} x {self.product_variant.sku} ({self.get_channel_display()})"
-
-    @property
-    def total_zar(self) -> Decimal:
-        return (self.quantity * self.unit_price_zar).quantize(Decimal("0.01"))

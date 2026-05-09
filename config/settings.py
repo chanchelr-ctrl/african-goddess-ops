@@ -232,7 +232,6 @@ UNFOLD = {
                     {"title": "Build", "icon": "construction", "link": "/build/"},
                     {"title": "Track", "icon": "track_changes", "link": "/track/"},
                     {"title": "Purchase", "icon": "local_shipping", "link": "/purchase/"},
-                    {"title": "Sales", "icon": "point_of_sale", "link": "/sales/"},
                 ],
             },
             {
@@ -254,7 +253,6 @@ UNFOLD = {
                     {"title": "Projects", "icon": "folder_open", "link": "/admin/inventory/project/"},
                     {"title": "Production runs", "icon": "build", "link": "/admin/inventory/productionrun/"},
                     {"title": "Purchase orders", "icon": "shopping_cart", "link": "/admin/inventory/purchaseorder/"},
-                    {"title": "Sales", "icon": "receipt_long", "link": "/admin/inventory/sale/"},
                     {"title": "Stock movements", "icon": "history", "link": "/admin/inventory/stockmovement/"},
                     {"title": "Change log", "icon": "edit_note", "link": "/admin/inventory/datachangelog/"},
                 ],

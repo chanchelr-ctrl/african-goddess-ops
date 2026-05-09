@@ -27,10 +27,6 @@ urlpatterns = [
     path("purchase/po/<int:pk>/temu/", views.po_open_in_temu, name="po_open_in_temu"),
     path("purchase/po/<int:pk>/parse-receipt/", views.po_parse_receipt, name="po_parse_receipt"),
 
-    # Sales flow
-    path("sales/", views.sales_index, name="sales"),
-    path("sales/record/", views.sales_record, name="sales_record"),
-
     # Data — export / import the canonical master workbook
     path("data/", views.data_index, name="data"),
     path("data/export/", views.data_export, name="data_export"),

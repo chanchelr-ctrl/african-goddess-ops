@@ -164,7 +164,7 @@ The database wins. The .xlsx file you downloaded is a point-in-time snapshot —
 
 ### What's NOT in the export
 
-- Purchase orders, sales, projects, production runs, stock movements — these are operational records, not master data. They don't round-trip via the master file. (The app already keeps full audit trails for stock movements internally.)
+- Purchase orders, projects, production runs, stock movements — these are operational records, not master data. They don't round-trip via the master file. (The app already keeps full audit trails for stock movements internally.)
 
 ## Backups
 

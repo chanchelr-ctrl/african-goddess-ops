@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Document version** | 0.1 |
-| **App version** | 0.2.0 |
-| **Date** | 8 May 2026 |
+| **Document version** | 0.2 |
+| **App version** | 0.3.0 |
+| **Date** | 9 May 2026 |
 | **Audience** | Tersia (operator) — first walk-through |
 | **Goal of this session** | Confirm the app supports the daily operational flow, surface anything missing or confusing, decide what's next. |
 
@@ -16,7 +16,7 @@
 2. Log in: username **`tersia`**
 3. You'll land on the **Dashboard**.
 
-The top nav reflects how you actually work, in order: **Dashboard → Build → Track → Purchase → Sales**. That's the order this document walks through.
+The top nav reflects how you actually work, in order: **Dashboard → Build → Track → Purchase → Data**. That's the order this document walks through.
 
 ---
 
@@ -24,11 +24,11 @@ The top nav reflects how you actually work, in order: **Dashboard → Build → 
 
 **Why it matters.** Every workday starts with a status read: which materials are running low, which orders are still open with Temu, which builds are mid-flight, what's been sold lately. Without this, the spreadsheet was your morning routine.
 
-**What this achieves.** A single screen replaces the morning spreadsheet review. You see the seven things that drive your day: stock value, on-order value, sales last 30 days, low-stock count, open PO count, in-flight projects, and recent production.
+**What this achieves.** A single screen replaces the morning spreadsheet review. You see the things that drive your day: stock value, on-order value, low-stock count, open PO count, in-flight projects, and recent production.
 
 **Click-through.**
 1. Land on the Dashboard (the home page).
-2. Read the **KPI tiles** across the top: stock value, on-order value, sales (30d), counts of low-stock / open POs / in-flight builds.
+2. Read the **KPI tiles** across the top: stock value, on-order value, counts of low-stock / open POs / in-flight builds.
 3. Scroll the **Low stock** table — anything in red needs reordering.
 4. Scroll the **Open POs** table — anything that's been "Sent" but not yet "Received".
 5. Scroll the **In-flight projects** — builds you've started but not finished.
@@ -185,29 +185,27 @@ The top nav reflects how you actually work, in order: **Dashboard → Build → 
 
 ---
 
-## Scenario 8 — Record a sale
+## Scenario 8 — Export and import master data
 
-**Why it matters.** Sales feed the 30-day revenue tile on the dashboard and (later) drive the auto-reorder model.
+**Why it matters.** Sometimes you want to share material/spec data with the consultant or a supplier, edit it in Excel, or apply bulk changes back to the app. The Data page gives you a single canonical workbook for round-tripping.
 
-**What this achieves.** One form: pick variant, qty, channel, price, customer name (optional). Logged. Reflected on the dashboard immediately.
+**What this achieves.** A fresh `MasterData_*.xlsx` is generated on demand from the live database — three sheets: `MaterialMaster` (every raw material with stock), `ProductSpec` (every BOM line), `ChangeLog` (every recorded change). The same file can be uploaded back to apply edits.
 
 **Click-through.**
-1. Click **Sales** → **Record sale**.
-2. Pick the variant from the dropdown (e.g. *SBR04 Teal & Turquoise — Earrings*).
-3. Enter quantity (1 by default).
-4. Enter unit price in ZAR.
-5. Pick a channel (Website / In person / Sugar Bush / Market / Wholesale / Gift / Other).
-6. (Optional) Customer name + notes.
-7. Click **Record**.
-8. Click **Sales** again — see the new row at the top of the log.
-9. Go to the Dashboard — *Sales (30d)* tile should reflect it.
+1. Click **Data** in the top nav.
+2. Read the four counters at the top: # materials, # sellable SKUs, # BOM lines, # change-log entries.
+3. Click **Download MasterData.xlsx** — Excel file lands in your downloads folder.
+4. Open it in Excel. Look at the three sheets. Confirm the figures match your mental model (e.g. SBR01DNL has 16 + 22 + 4 = 42 variant beads on the ProductSpec sheet).
+5. Make a small change in `MaterialMaster` — e.g. update a Reorder Point for one material. Save the .xlsx.
+6. Back in the app, click **Choose File** → pick the edited file → leave Prune unticked → **Apply file to database**.
+7. The page reloads with a summary banner. Scroll to the **Recent changes** table — your edit appears with your username.
 
-**What "good" looks like.** Two clicks and a price box, you're done.
+**What "good" looks like.** You feel like the app and the spreadsheet are the same data, looked at two ways. No silent overwrites, no surprises.
 
 **Feedback to capture.**
-- Are these the right channels?
-- Do you need to record cost-of-goods on the sale, or is that always derived?
-- Any fields missing (discount, payment method, etc.)?
+- Do the column names make sense?
+- Anything missing you'd want on the export?
+- Is the Prune option clear, or should it be hidden?
 
 ---
 
@@ -215,7 +213,7 @@ The top nav reflects how you actually work, in order: **Dashboard → Build → 
 
 **Why it matters.** New beads, new findings, new product types — the catalogue isn't static. There needs to be a place to edit it.
 
-**What this achieves.** The Django admin (under `/admin/`) gives you full CRUD on every model: raw materials, products, variants, BOMs, suppliers, POs, projects, sales, and the read-only stock-movement audit log. This is your back-office.
+**What this achieves.** The Django admin (under `/admin/`) gives you full CRUD on every model: raw materials, products, variants, BOMs, suppliers, POs, projects, and the read-only stock-movement and change-log audit trails. This is your back-office.
 
 **Click-through.**
 1. Go to **`/admin/`** (or click the admin link in the nav, if shown).
@@ -244,7 +242,8 @@ The top nav reflects how you actually work, in order: **Dashboard → Build → 
 
 These were scoped out of v0.2 — flag if any are now blockers:
 
-- WooCommerce auto-sync (sales today come in manually)
+- Sales tracking (removed for now — design preserved for re-add when channel decisions firm up)
+- WooCommerce auto-sync
 - Email / SMS low-stock alerts (visible in dashboard only)
 - Multi-user with separate roles (single Tersia login)
 - Variant pricing per Sugar Bush vs. African Goddess channel

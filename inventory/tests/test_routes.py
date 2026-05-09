@@ -107,15 +107,6 @@ class TestWorkflowRoutes:
         r = authed.get("/purchase/")
         assert r.status_code == 200
 
-    def test_sales_index(self, authed):
-        r = authed.get("/sales/")
-        assert r.status_code == 200
-
-    def test_sales_record_get(self, authed):
-        _seed_minimal()
-        r = authed.get("/sales/record/")
-        assert r.status_code == 200
-
 
 class TestAdminLoads:
     @pytest.mark.parametrize("path", [
@@ -130,7 +121,6 @@ class TestAdminLoads:
         "/admin/inventory/productionrun/",
         "/admin/inventory/project/",
         "/admin/inventory/projectitem/",
-        "/admin/inventory/sale/",
         "/admin/inventory/stockmovement/",
     ])
     def test_loads(self, authed, path):

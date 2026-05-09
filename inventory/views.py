@@ -6,7 +6,7 @@ Process-flow nav top-level verbs:
 - Build (/build/)            - start a new build / project
 - Track (/track/)            - in-flight projects
 - Purchase (/purchase/)      - reorder + Temu pipeline
-- Sales (/sales/)            - record + log sales
+- Data (/data/)              - export / import the master workbook
 
 Detail views and HTMX endpoints land under each verb.
 """
@@ -42,7 +42,6 @@ from .models import (
     PurchaseOrder,
     PurchaseOrderLine,
     RawMaterial,
-    Sale,
     StockMovement,
     Supplier,
     Variant,
@@ -108,12 +107,6 @@ def dashboard(request):
         .order_by("-run_date", "-created_at")[:10]
     )
 
-    sales_30d = Sale.objects.filter(sale_date__gte=last_30)
-    sales_30d_total = sales_30d.aggregate(
-        total=Sum(F("unit_price_zar") * F("quantity"))
-    )["total"] or Decimal("0")
-    sales_30d_units = sales_30d.aggregate(units=Sum("quantity"))["units"] or 0
-
     stock_value_zar = RawMaterial.objects.filter(is_active=True).aggregate(
         total=Sum(F("current_stock") * F("last_paid_unit_cost"))
     )["total"] or Decimal("0")
@@ -132,8 +125,6 @@ def dashboard(request):
         "recent_runs": recent_runs,
         "stock_value_zar": stock_value_zar,
         "on_order_value_zar": on_order_value,
-        "sales_30d_total": sales_30d_total,
-        "sales_30d_units": sales_30d_units,
         "products_count": Product.objects.filter(is_active=True).count(),
         "variants_count": ProductVariant.objects.filter(is_active=True).count(),
         "materials_count": RawMaterial.objects.filter(is_active=True).count(),
@@ -585,48 +576,6 @@ def po_parse_receipt(request, pk):
     return render(request, "inventory/po_parse_receipt.html", {
         "po": po, "pasted": pasted_text, "parsed": parsed,
     })
-
-
-# ---------------------------------------------------------------------------
-# Sales
-# ---------------------------------------------------------------------------
-
-
-@login_required
-def sales_index(request):
-    sales = Sale.objects.select_related(
-        "product_variant", "product_variant__product"
-    ).order_by("-sale_date", "-created_at")[:200]
-    return render(request, "inventory/sales_index.html", {"sales": sales})
-
-
-@login_required
-def sales_record(request):
-    if request.method != "POST":
-        variants = ProductVariant.objects.filter(is_active=True).select_related(
-            "product", "variant"
-        ).order_by("product", "variant")
-        return render(request, "inventory/sales_record.html", {"variants": variants})
-
-    sku = request.POST.get("variant")
-    pv = get_object_or_404(ProductVariant, sku=sku)
-    try:
-        qty = int(request.POST.get("qty") or "1")
-        unit_price = Decimal(request.POST.get("unit_price") or "0")
-    except (ValueError, ArithmeticError):
-        messages.error(request, "Invalid quantity or price.")
-        return redirect("sales_record")
-    Sale.objects.create(
-        product_variant=pv,
-        quantity=qty,
-        unit_price_zar=unit_price,
-        channel=request.POST.get("channel") or "WEBSITE",
-        customer_name=request.POST.get("customer_name", "").strip(),
-        notes=request.POST.get("notes", "").strip(),
-        created_by=request.user,
-    )
-    messages.success(request, f"Recorded sale of {qty} x {pv.sku}.")
-    return redirect("sales")
 
 
 # ---------------------------------------------------------------------------

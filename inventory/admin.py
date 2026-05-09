@@ -21,7 +21,6 @@ from .models import (
     PurchaseOrder,
     PurchaseOrderLine,
     RawMaterial,
-    Sale,
     StockMovement,
     Supplier,
     Variant,
@@ -331,39 +330,6 @@ class ProductionRunAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
-    def save_model(self, request, obj, form, change):
-        if not change and not obj.created_by_id:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-# ---------------------------------------------------------------------------
-# Sales
-# ---------------------------------------------------------------------------
-
-
-@admin.register(Sale)
-class SaleAdmin(ModelAdmin):
-    list_display = ("sale_date", "product_variant", "quantity", "unit_price_zar",
-                    "total_zar_admin", "channel", "customer_name", "created_by")
-    list_filter = ("channel", "sale_date", "product_variant__product__brand")
-    search_fields = ("product_variant__sku", "customer_name", "notes")
-    autocomplete_fields = ("product_variant",)
-    readonly_fields = ("created_at", "created_by")
-    date_hierarchy = "sale_date"
-
-    fieldsets = (
-        (None, {"fields": ("sale_date", "product_variant", "quantity",
-                           "unit_price_zar", "channel")}),
-        ("Customer", {"fields": ("customer_name",)}),
-        ("Notes", {"fields": ("notes",)}),
-        ("Audit", {"fields": ("created_at", "created_by"), "classes": ("collapse",)}),
-    )
-
-    @admin.display(description="Total")
-    def total_zar_admin(self, obj):
-        return f"R {obj.total_zar:,.2f}"
 
     def save_model(self, request, obj, form, change):
         if not change and not obj.created_by_id:

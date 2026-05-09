@@ -1,5 +1,5 @@
 """
-Tests for v0.2 schema: Brand, Variant, ProductVariant + BOM/PO/ProductionRun/Sale.
+Tests for v0.2 schema: Brand, Variant, ProductVariant + BOM/PO/ProductionRun.
 """
 
 from decimal import Decimal
@@ -21,7 +21,6 @@ from inventory.models import (
     PurchaseOrder,
     PurchaseOrderLine,
     RawMaterial,
-    Sale,
     StockMovement,
     Supplier,
     Variant,
@@ -312,20 +311,6 @@ class TestProject:
         project.refresh_from_db()
         assert project.total_made_units == 2
         assert project.is_complete
-
-
-# ---------------------------------------------------------------------------
-# Sale model
-# ---------------------------------------------------------------------------
-
-
-class TestSale:
-    def test_total_zar(self, pv_sbr01_earr):
-        s = Sale.objects.create(
-            product_variant=pv_sbr01_earr, quantity=3,
-            unit_price_zar=Decimal("450"), channel="WEBSITE",
-        )
-        assert s.total_zar == Decimal("1350.00")
 
 
 # ---------------------------------------------------------------------------
