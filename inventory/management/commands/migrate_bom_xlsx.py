@@ -99,6 +99,19 @@ BUNDLES = {
 # Variants in the SBA brand that get FBA bundles
 FBA_VARIANTS = ["SBA02", "SBA04", "SBA06"]
 
+# Cross-brand variant mapping. The SBR coloured beads sheet groups beads by
+# colour palette (SBR02 - Magenta & Coral / Amethyst Mardi Gras, etc.) but
+# the same row carries BOM quantities for BOTH SBR* product columns
+# (Sugar Bush) and SBA* product columns (African Goddess). When we're
+# inside an SBR section but the BOM cell sits in an SBA product column,
+# apply the line to the matching SBA variant rather than dropping it.
+CROSS_BRAND_VARIANT_MAP = {
+    "SBR02": "SBA02",  # Magenta & Coral / Amethyst Mardi Gras
+    "SBR04": "SBA04",  # Teal & Turquoise / Mystic Lagoon
+    "SBR06": "SBA06",  # Beige, White & Clear / Pure Sanctity
+    # SBR01, SBR03, SBR05 — Sugar Bush only, no AG equivalent
+}
+
 # Column-name aliases (spreadsheet column -> canonical product code)
 COLUMN_ALIASES = {
     "SBR00MULTI": "SBA00MULTI",
@@ -135,9 +148,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def _default_data_dir() -> Path:
-        # Walk up from BASE_DIR until we find the knowledge repo
+        # v2: BEAD TOTALS rows now have correct =SUM(...) formulas. Originals
+        # are preserved in ../client_data/ for diff/audit.
         base = Path(settings.BASE_DIR).parent
-        candidate = base / "Inventory & Sales Management" / "01_Client_Analysis" / "client_data"
+        candidate = base / "Inventory & Sales Management" / "01_Client_Analysis" / "client_data_v2"
         return candidate
 
     # -----------------------------------------------------------------------
@@ -372,22 +386,27 @@ class Command(BaseCommand):
     def _applicable_variants(product: Product, current_variant_code: Optional[str]) -> list[str]:
         """Decide which variant(s) this BOM line applies to.
 
-        - If row has a current_variant_code (from COLOUR COMBINATION) — use it,
-          but ONLY if it belongs to this product's brand. (Findings rows have
-          no variant; SBR rows shouldn't add SBA-product BOMs to a SBR variant.)
-        - If no variant tracked (e.g. findings sheet — cross-cutting) — apply
-          to ALL variants of this product's brand.
+        - Same-brand match: if the row's variant matches the product's brand
+          (e.g. inside SBR02, applying to an SBR product) — use the row variant.
+        - Cross-brand match: SBR sections in the coloured-beads sheet carry
+          BOM quantities for SBA columns too (the colour palette is shared
+          with the matching African Goddess variant). Map SBR -> SBA via
+          CROSS_BRAND_VARIANT_MAP and apply if a mapping exists.
+        - No variant tracked (findings, standard beads) — cross-cutting:
+          apply to ALL variants of this product's brand.
         """
         if current_variant_code:
-            # Variant must belong to product's brand
             v_brand = current_variant_code[:3]  # SBR or SBA
             if v_brand == product.brand.code:
                 return [current_variant_code]
-            # Cross-brand: don't apply (e.g. SBA columns inside the SBR sheet
-            # while in an SBR01 group — those zeros are a noise artefact)
+            # Cross-brand: SBR row -> matching SBA variant if mapped
+            if v_brand == "SBR" and product.brand.code == "SBA":
+                mapped = CROSS_BRAND_VARIANT_MAP.get(current_variant_code)
+                if mapped:
+                    return [mapped]
             return []
-        # No variant tracker → cross-cutting (findings). Apply to all variants
-        # of this product's brand.
+        # No variant tracker → cross-cutting. Apply to all variants of this
+        # product's brand.
         return [v for v, (b, _) in VARIANTS.items() if b == product.brand.code]
 
     @staticmethod
