@@ -30,4 +30,9 @@ urlpatterns = [
     # Sales flow
     path("sales/", views.sales_index, name="sales"),
     path("sales/record/", views.sales_record, name="sales_record"),
+
+    # Data — export / import the canonical master workbook
+    path("data/", views.data_index, name="data"),
+    path("data/export/", views.data_export, name="data_export"),
+    path("data/import/", views.data_import, name="data_import"),
 ]

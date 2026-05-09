@@ -1,0 +1,125 @@
+{% extends "inventory/base.html" %}
+{% block title %}Data — African Goddess Operations{% endblock %}
+{% block content %}
+{% with active="data" %}{% endwith %}
+
+<h1 style="font-family:Georgia, serif; font-weight:500; letter-spacing:0.5px;">Data — Export & Import</h1>
+<p style="color:var(--text-muted); margin-top:0; font-style:italic;">
+    The canonical master workbook contains every raw material, every product spec line, and the full change history.
+    Generated fresh from the live database every time you click Export.
+</p>
+
+<div class="kpi-grid">
+    <div class="kpi">
+        <div class="kpi-icon">∞</div>
+        <div class="kpi-value">{{ counts.materials }}</div>
+        <div class="kpi-label">Raw materials ({{ counts.active_materials }} active)</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-icon">★</div>
+        <div class="kpi-value">{{ counts.product_variants }}</div>
+        <div class="kpi-label">Sellable SKUs</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-icon">≡</div>
+        <div class="kpi-value">{{ counts.bom_lines }}</div>
+        <div class="kpi-label">BOM spec lines</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-icon">⌛</div>
+        <div class="kpi-value">{{ counts.change_log_entries }}</div>
+        <div class="kpi-label">Change-log entries</div>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2>Export data</h2>
+    </div>
+    <div class="card-body padded">
+        <p style="margin-top:0;">Download a fresh <strong>MasterData_*.xlsx</strong> with three sheets:</p>
+        <ul style="margin-top:0;">
+            <li><strong>MaterialMaster</strong> — every raw material, with current stock and ZAR value of stock on hand.</li>
+            <li><strong>ProductSpec</strong> — the full BOM. One row per (sellable SKU × material) line with quantity.</li>
+            <li><strong>ChangeLog</strong> — every recorded change to master/spec data, with timestamp and user.</li>
+        </ul>
+        <p>The .xlsx is generated on demand. Open it, edit it, share it — the file is yours. The app does not write to it after download.</p>
+        <div class="form-actions">
+            <a href="/data/export/" class="btn">⬇  Download MasterData.xlsx</a>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header">
+        <h2>Import data</h2>
+    </div>
+    <div class="card-body padded">
+        <p style="margin-top:0;">
+            Upload a <strong>MasterData_*.xlsx</strong> to apply changes back to the database.
+            Materials are matched by <code>SKU</code>; BOM lines by <code>(PV SKU, Material SKU)</code>.
+        </p>
+        <p style="font-size:0.88rem; color:var(--text-muted);">
+            <strong>Default behaviour:</strong> additive — rows in the file are upserted, anything in the DB but not in the file is left alone.
+            Tick <em>Prune</em> if you want missing rows to be removed too.
+        </p>
+        <form method="post" action="/data/import/" enctype="multipart/form-data" style="margin-top:1rem;">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="file">Master data file (.xlsx)</label>
+                <input type="file" name="file" id="file" accept=".xlsx" required>
+            </div>
+            <div class="form-row">
+                <label style="display:inline-flex; align-items:center; gap:0.5rem; font-weight:400; text-transform:none; letter-spacing:0; color:var(--text);">
+                    <input type="checkbox" name="prune" style="width:auto;"> Prune missing rows (deactivate materials, delete BOM lines not in file)
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">⬆  Apply file to database</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header">
+        <h2>Recent changes (latest 50)</h2>
+        <span class="meta">From the change log</span>
+    </div>
+    <div class="card-body">
+        {% if recent_changes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Who</th>
+                    <th>Action</th>
+                    <th>Object</th>
+                    <th>Field</th>
+                    <th>Old</th>
+                    <th>New</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in recent_changes %}
+                <tr>
+                    <td style="white-space:nowrap;">{{ c.timestamp|date:"Y-m-d H:i" }}</td>
+                    <td>{% if c.user %}{{ c.user.username }}{% else %}<em style="color:var(--text-muted);">system</em>{% endif %}</td>
+                    <td>
+                        <span class="pill {% if c.action == 'CREATE' %}pill-success{% elif c.action == 'DELETE' %}pill-reorder{% endif %}">{{ c.action }}</span>
+                    </td>
+                    <td><code>{{ c.model_name }}</code> · {{ c.sku|default:c.object_pk }}</td>
+                    <td>{{ c.field|default:"—" }}</td>
+                    <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.old_value|truncatechars:60 }}</td>
+                    <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.new_value|truncatechars:60 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No changes recorded yet. Edit a material, BOM line, product, or supplier and it will appear here.</div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

@@ -130,6 +130,42 @@ CSV column requirements:
 - **products.csv**: required `sku`, `name`; optional `pillar`, `retail_price_zar`, `notes`, `is_active`
 - **boms.csv**: required `product_sku`, `material_sku`, `quantity`; optional `notes`
 
+## Data — Export & Import
+
+The app keeps everything in its database. The **Data** page (top menu → **Data**) lets you turn that into a single Excel file you can read, share, edit, or re-import.
+
+### Export Data — get an Excel snapshot
+
+1. Click **Data** in the top menu.
+2. Click **Download MasterData.xlsx**.
+3. Excel file downloads to your browser's downloads folder. Filename includes today's date and time.
+
+The file has three sheets:
+
+- **MaterialMaster** — every raw material. SKU, name, size, colour, costs, supplier, current stock on hand, ZAR value of stock on hand (computed live in Excel as Stock × Unit Cost). One row per material.
+- **ProductSpec** — the full BOM. One row per (sellable SKU × material) combination, with the BOM quantity. Spec data only — no stock or cost (those live on the MaterialMaster sheet).
+- **ChangeLog** — every recorded change to master/spec data: timestamp, who made the change, what changed, old value, new value.
+
+The file is generated fresh every time you click Export — it's a snapshot of the current database. The app does **not** keep writing to the file after you download it. Edit it freely.
+
+### Import Data — apply changes from an Excel file
+
+1. Edit the .xlsx in Excel — change material names, costs, reorder points, or BOM quantities. Save the file.
+2. On the **Data** page, click **Choose File** and pick your edited .xlsx.
+3. Optional: tick **Prune missing rows** if you want materials/BOM lines that you removed from the file to also be removed from the database. Leave unticked (default) to only apply additions and edits.
+4. Click **Apply file to database**.
+5. The page reloads with a summary: how many materials were updated, how many BOM lines were created/updated, etc.
+
+Every change made by the import is recorded in the **ChangeLog**, attributed to your username.
+
+### What if I edit the database and the file at the same time?
+
+The database wins. The .xlsx file you downloaded is a point-in-time snapshot — it does **not** automatically receive your in-app edits. To see fresh data, click **Download MasterData.xlsx** again.
+
+### What's NOT in the export
+
+- Purchase orders, sales, projects, production runs, stock movements — these are operational records, not master data. They don't round-trip via the master file. (The app already keeps full audit trails for stock movements internally.)
+
 ## Backups
 
 Every day at 6pm (or whenever Task Scheduler is set), `backup.ps1` automatically copies your database to `backups\db_YYYY-MM-DD_HHMM.sqlite3`. The last 30 backups are kept; older ones are deleted automatically.

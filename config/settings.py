@@ -53,6 +53,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "inventory.middleware.CurrentUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -255,6 +256,14 @@ UNFOLD = {
                     {"title": "Purchase orders", "icon": "shopping_cart", "link": "/admin/inventory/purchaseorder/"},
                     {"title": "Sales", "icon": "receipt_long", "link": "/admin/inventory/sale/"},
                     {"title": "Stock movements", "icon": "history", "link": "/admin/inventory/stockmovement/"},
+                    {"title": "Change log", "icon": "edit_note", "link": "/admin/inventory/datachangelog/"},
+                ],
+            },
+            {
+                "title": "Data",
+                "separator": True,
+                "items": [
+                    {"title": "Export / Import", "icon": "swap_vert", "link": "/data/"},
                 ],
             },
         ],

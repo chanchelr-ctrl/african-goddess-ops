@@ -12,6 +12,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from .models import (
     BomLine,
     Brand,
+    DataChangeLog,
     ProductionRun,
     Product,
     ProductVariant,
@@ -373,6 +374,34 @@ class SaleAdmin(ModelAdmin):
 # ---------------------------------------------------------------------------
 # Stock movements (read-mostly audit log)
 # ---------------------------------------------------------------------------
+
+
+@admin.register(DataChangeLog)
+class DataChangeLogAdmin(ModelAdmin):
+    list_display = ("timestamp", "user", "action", "model_name", "sku",
+                    "field", "old_value_short", "new_value_short")
+    list_filter = ("action", "model_name", "user")
+    search_fields = ("sku", "model_name", "field", "old_value", "new_value", "note")
+    readonly_fields = ("timestamp", "user", "action", "model_name", "object_pk",
+                       "sku", "field", "old_value", "new_value", "note")
+    date_hierarchy = "timestamp"
+
+    @admin.display(description="Old")
+    def old_value_short(self, obj):
+        return (obj.old_value or "")[:50]
+
+    @admin.display(description="New")
+    def new_value_short(self, obj):
+        return (obj.new_value or "")[:50]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False if obj is not None else super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(StockMovement)

@@ -690,6 +690,47 @@ class ProductionRun(models.Model):
 # ---------------------------------------------------------------------------
 
 
+class DataChangeLog(models.Model):
+    """Append-only audit log of edits to master/spec data. Distinct from
+    StockMovement (which logs only stock deltas). Each row records one
+    field-level change to a tracked model.
+    """
+
+    ACTION_CHOICES = [
+        ("CREATE", "Created"),
+        ("UPDATE", "Updated"),
+        ("DELETE", "Deleted"),
+    ]
+
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="data_change_logs",
+    )
+    action = models.CharField(max_length=16, choices=ACTION_CHOICES, db_index=True)
+    model_name = models.CharField(max_length=64, db_index=True)
+    object_pk = models.PositiveBigIntegerField(null=True, blank=True)
+    sku = models.CharField(max_length=128, blank=True, db_index=True,
+                           help_text="SKU/code of the changed object, if applicable.")
+    field = models.CharField(max_length=64, blank=True)
+    old_value = models.TextField(blank=True)
+    new_value = models.TextField(blank=True)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ("-timestamp",)
+        indexes = [
+            models.Index(fields=["model_name", "object_pk"]),
+            models.Index(fields=["sku", "-timestamp"]),
+        ]
+
+    def __str__(self) -> str:
+        who = self.user.username if self.user else "system"
+        return (f"{self.timestamp:%Y-%m-%d %H:%M} {who} "
+                f"{self.action} {self.model_name}.{self.field or '*'} "
+                f"({self.sku or self.object_pk})")
+
+
 class Sale(models.Model):
     CHANNEL_CHOICES = [
         ("WEBSITE", "Website (DTC)"),

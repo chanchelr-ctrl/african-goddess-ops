@@ -33,6 +33,7 @@ from django.utils import timezone
 from .models import (
     BomLine,
     Brand,
+    DataChangeLog,
     ProductionRun,
     Product,
     ProductVariant,
@@ -626,3 +627,94 @@ def sales_record(request):
     )
     messages.success(request, f"Recorded sale of {qty} x {pv.sku}.")
     return redirect("sales")
+
+
+# ---------------------------------------------------------------------------
+# Data — export / import master data .xlsx
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def data_index(request):
+    """The 'Data' page — Export Data / Import Data buttons + recent change log."""
+    recent_changes = DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50]
+    counts = {
+        "materials": RawMaterial.objects.count(),
+        "active_materials": RawMaterial.objects.filter(is_active=True).count(),
+        "products": Product.objects.count(),
+        "product_variants": ProductVariant.objects.count(),
+        "bom_lines": BomLine.objects.count(),
+        "change_log_entries": DataChangeLog.objects.count(),
+    }
+    return render(request, "inventory/data_index.html", {
+        "recent_changes": recent_changes,
+        "counts": counts,
+    })
+
+
+@login_required
+def data_export(request):
+    """Stream a freshly-generated MasterData_v5.xlsx to the browser."""
+    from datetime import datetime
+    from .management.commands.export_master import export_to_bytes
+
+    payload = export_to_bytes()
+    filename = f"MasterData_{datetime.now():%Y-%m-%d_%H%M}.xlsx"
+    response = HttpResponse(
+        payload,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def data_import(request):
+    """Accept an uploaded MasterData .xlsx and apply it to the DB."""
+    if request.method != "POST":
+        return redirect("data")
+
+    upload = request.FILES.get("file")
+    if not upload:
+        messages.error(request, "Please choose a file to upload.")
+        return redirect("data")
+
+    # Save upload to a temp path (openpyxl needs a real path or file-like)
+    import tempfile
+    from pathlib import Path as _Path
+    from django.core.management import call_command
+    from io import StringIO
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    try:
+        for chunk in upload.chunks():
+            tmp.write(chunk)
+        tmp.close()
+
+        args = [tmp.name]
+        if request.POST.get("prune") == "on":
+            args.append("--prune")
+        out = StringIO()
+        try:
+            call_command("import_master", *args, stdout=out)
+        except Exception as e:
+            messages.error(request, f"Import failed: {e}")
+            return redirect("data")
+
+        report = out.getvalue()
+        # Surface the summary as a single message
+        summary_lines = [ln.strip() for ln in report.splitlines() if ln.strip()]
+        messages.success(
+            request,
+            "Import complete. " + " · ".join(
+                ln for ln in summary_lines
+                if ln and ":" in ln and not ln.startswith("=")
+            )[:500],
+        )
+    finally:
+        try:
+            _Path(tmp.name).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    return redirect("data")

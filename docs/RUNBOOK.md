@@ -144,6 +144,27 @@ SQLite single-writer constraint. Should be rare in practice (single user). If it
 ### Tests fail after pulling new commits
 Always run `manage.py migrate` after pulling — schema may have changed.
 
+### Master data import failed / corrupted file
+The `Import Data` button accepts a `.xlsx` matching the schema written by `Export Data`. Required sheets: `MaterialMaster`, `ProductSpec`. The `ChangeLog` sheet (if present) is ignored — it's an output-only audit trail.
+
+```powershell
+# Dry-run from the CLI to see what would change
+.\.venv\Scripts\python.exe manage.py import_master "path\to\file.xlsx" --dry-run
+
+# Real import (default: additive — does not delete missing rows)
+.\.venv\Scripts\python.exe manage.py import_master "path\to\file.xlsx"
+
+# Strict import: deactivate materials and delete BOM lines not in the file
+.\.venv\Scripts\python.exe manage.py import_master "path\to\file.xlsx" --prune
+```
+
+The old `migrate_bom_xlsx` command (reads the original 3-file client spreadsheets) is preserved for bootstrap-from-scratch only. Day-to-day imports should use `import_master`.
+
+### Audit log (`DataChangeLog`)
+Every CREATE / UPDATE / DELETE on master/spec models (RawMaterial, Product, ProductVariant, Variant, Brand, BomLine, Supplier) writes a row. View at `/admin/inventory/datachangelog/` or as the `ChangeLog` sheet in any export.
+
+User attribution comes from `inventory.middleware.CurrentUserMiddleware`, which stores `request.user` in a thread-local that signals read on save. Edits made from the shell or via management commands have `user=NULL`.
+
 ### Suspected db corruption
 ```powershell
 .\.venv\Scripts\python.exe -c "import sqlite3; c = sqlite3.connect('db.sqlite3'); print(c.execute('PRAGMA integrity_check').fetchall())"
