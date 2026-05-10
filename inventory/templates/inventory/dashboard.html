@@ -14,24 +14,25 @@
         font-size: 0.95rem;
     }
 
-    .launch-grid { display: flex; flex-direction: column; gap: 1rem; }
+    .launch-grid { display: flex; flex-direction: column; gap: 1.25rem; }
 
     .launch-row {
         display: grid;
-        grid-template-columns: 96px minmax(180px, 0.8fr) minmax(0, 2fr) 28px;
-        gap: 1.5rem;
+        grid-template-columns: 128px minmax(200px, 0.85fr) minmax(0, 2fr) 32px;
+        gap: 1.75rem;
         align-items: center;
-        padding: 1.4rem 1.6rem;
+        padding: 2rem 2.25rem;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-radius: 16px;
         box-shadow: var(--shadow-sm);
         text-decoration: none;
         color: inherit;
         position: relative;
         overflow: hidden;
-        transition: transform .22s ease, box-shadow .22s ease,
-                    border-color .22s ease, background .22s ease;
+        transition: transform .26s cubic-bezier(.2,.8,.2,1),
+                    box-shadow .26s ease, border-color .26s ease,
+                    background .26s ease;
         opacity: 0; transform: translateY(8px);
         animation: row-rise .55s ease-out forwards;
     }
@@ -44,13 +45,13 @@
     }
 
     .launch-row:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 22px rgba(58,36,24,.12);
+        transform: translateY(-6px) scale(1.005);
+        box-shadow: 0 18px 38px rgba(58,36,24,.18);
         border-color: var(--primary);
         text-decoration: none;
     }
     .launch-row:hover .row-chevron {
-        transform: translateX(4px); color: var(--primary);
+        transform: translateX(8px); color: var(--primary);
     }
     .launch-row:hover .glyph .stroke { stroke: var(--primary); }
     .launch-row:hover .glyph .accent { fill: var(--primary); }
@@ -82,11 +83,26 @@
     }
 
     /* ---------- Icon column ------------------------------------------- */
-    .row-icon { width: 72px; height: 72px; }
+    .row-icon {
+        width: 104px; height: 104px;
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+    }
+    /* Soft warm halo behind the glyph that brightens on hover */
+    .row-icon::before {
+        content: ""; position: absolute; inset: -8px;
+        background: radial-gradient(circle at center,
+            rgba(201,163,92,0.18) 0%, transparent 65%);
+        opacity: 0; transition: opacity .35s ease;
+        border-radius: 50%;
+    }
+    .launch-row:hover .row-icon::before { opacity: 1; }
     .glyph {
         width: 100%; height: 100%;
-        overflow: visible;
+        overflow: visible; position: relative;
+        transition: transform .35s cubic-bezier(.2,.8,.2,1);
     }
+    .launch-row:hover .glyph { transform: scale(1.06); }
     .glyph .stroke {
         stroke: var(--text-muted); stroke-width: 1.6; fill: none;
         stroke-linecap: round; stroke-linejoin: round;
@@ -132,33 +148,69 @@
     .glyph-track .sand-grain:nth-of-type(2) { animation-delay: 0.3s; }
     .glyph-track .sand-grain:nth-of-type(3) { animation-delay: 0.65s; }
 
-    /* Bracelet feature-bead gentle scale on hover */
+    /* ---------- Per-glyph hover animations --------------------------- */
+    /* Build: cord rotates slowly on hover, feature bead bobs */
+    .glyph-build .cord { transform-origin: 32px 32px; }
+    .launch-row:hover .glyph-build .cord {
+        animation: cord-spin 18s linear infinite;
+    }
+    @keyframes cord-spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
     .launch-row:hover .glyph-build .feature-bead {
         animation: bead-bob 1.4s ease-in-out infinite;
     }
     @keyframes bead-bob {
         0%, 100% { transform: scale(1); }
-        50%     { transform: scale(1.18); }
+        50%     { transform: scale(1.22); }
     }
     .glyph-build .feature-bead { transform-origin: center; transform-box: fill-box; }
 
-    /* Parcel bow gentle scale on hover */
-    .launch-row:hover .glyph-purchase .bow {
-        animation: bow-pop .5s ease-out;
+    /* Track: hourglass tips on hover (briefly), sand keeps falling */
+    .glyph-track .frame { transform-origin: 32px 32px; }
+    .launch-row:hover .glyph-track .frame {
+        animation: hourglass-tip .9s cubic-bezier(.4,.1,.4,1.4);
     }
-    @keyframes bow-pop {
-        0%, 100% { transform: scale(1); }
-        50%      { transform: scale(1.18); }
+    @keyframes hourglass-tip {
+        0%   { transform: rotate(0deg); }
+        45%  { transform: rotate(-18deg); }
+        100% { transform: rotate(0deg); }
+    }
+
+    /* Purchase: package rocks forward, bow pops bigger */
+    .glyph-purchase .package-body { transform-origin: 32px 56px; }
+    .launch-row:hover .glyph-purchase .package-body {
+        animation: package-rock 1.1s cubic-bezier(.4,.1,.4,1.4);
+    }
+    @keyframes package-rock {
+        0%   { transform: rotate(0); }
+        25%  { transform: rotate(-3deg); }
+        55%  { transform: rotate(3deg); }
+        100% { transform: rotate(0); }
+    }
+    .launch-row:hover .glyph-purchase .bow {
+        animation: bow-flutter .9s ease-out;
+    }
+    @keyframes bow-flutter {
+        0%, 100% { transform: scale(1) rotate(0); }
+        30%      { transform: scale(1.22) rotate(-3deg); }
+        65%      { transform: scale(1.10) rotate(2deg); }
     }
     .glyph-purchase .bow { transform-origin: center; transform-box: fill-box; }
 
-    /* Scroll: nudge the seal on hover */
+    /* Data: scroll body unfurls (extends), seal presses */
+    .glyph-data .scroll-body {
+        transform-origin: 32px 32px;
+        transition: transform .45s cubic-bezier(.2,.8,.2,1);
+    }
+    .launch-row:hover .glyph-data .scroll-body { transform: scaleX(1.08); }
     .launch-row:hover .glyph-data .seal {
-        animation: seal-press .55s ease-out;
+        animation: seal-press .65s ease-out;
     }
     @keyframes seal-press {
-        0%, 100% { transform: rotate(0); }
-        50%      { transform: rotate(-12deg) scale(1.12); }
+        0%, 100% { transform: rotate(0) scale(1); }
+        45%      { transform: rotate(-15deg) scale(1.18); }
     }
     .glyph-data .seal { transform-origin: center; transform-box: fill-box; }
 
@@ -254,10 +306,12 @@
     <a href="/build/" class="launch-row {% if build_alert %}alert{% endif %}" aria-label="Build — plan and start a build">
         <div class="row-icon">
             <svg class="glyph glyph-build" viewBox="0 0 64 64" aria-hidden="true">
-                {# Cord/thread suggested as a dashed circle #}
-                <circle class="stroke draw" style="--len:140; --draw-delay:.15s;"
-                        cx="32" cy="32" r="22"
-                        stroke-dasharray="2 3" stroke-width="0.9"/>
+                {# Cord/thread suggested as a dashed circle that rotates on hover #}
+                <g class="cord">
+                    <circle class="stroke draw" style="--len:140; --draw-delay:.15s;"
+                            cx="32" cy="32" r="22"
+                            stroke-dasharray="2 3" stroke-width="0.9"/>
+                </g>
                 {# Beads around the bracelet — varied sizes #}
                 <circle class="filled-soft" cx="54"   cy="32"   r="3.6"/>
                 <circle class="filled-soft" cx="47.6" cy="16.4" r="3.0"/>
@@ -305,14 +359,16 @@
     <a href="/track/" class="launch-row" aria-label="Track — in-flight projects and recent runs">
         <div class="row-icon">
             <svg class="glyph glyph-track" viewBox="0 0 64 64" aria-hidden="true">
-                {# Top frame, side funnels, bottom frame #}
-                <path class="stroke draw" style="--len:170; --draw-delay:.20s;"
-                      d="M 14 8 L 50 8 M 14 56 L 50 56 M 14 8 L 32 32 L 50 8 M 14 56 L 32 32 L 50 56"/>
-                {# Sand in the top chamber — soft fill #}
-                <path class="filled-soft" d="M 19 12 L 45 12 L 34 28 L 30 28 Z"/>
-                {# Pile in the bottom chamber — gold accent #}
-                <path class="accent" d="M 22 54 L 42 54 L 36 47 L 28 47 Z"/>
-                {# Falling sand grains #}
+                <g class="frame">
+                    {# Top frame, side funnels, bottom frame #}
+                    <path class="stroke draw" style="--len:170; --draw-delay:.20s;"
+                          d="M 14 8 L 50 8 M 14 56 L 50 56 M 14 8 L 32 32 L 50 8 M 14 56 L 32 32 L 50 56"/>
+                    {# Sand in the top chamber — soft fill #}
+                    <path class="filled-soft" d="M 19 12 L 45 12 L 34 28 L 30 28 Z"/>
+                    {# Pile in the bottom chamber — gold accent #}
+                    <path class="accent" d="M 22 54 L 42 54 L 36 47 L 28 47 Z"/>
+                </g>
+                {# Falling sand grains (sit OUTSIDE the frame group so the tip-on-hover doesn't drag them) #}
                 <circle class="accent sand-grain" cx="32" cy="35" r="0.9"/>
                 <circle class="accent sand-grain" cx="32" cy="38" r="0.9"/>
                 <circle class="accent sand-grain" cx="32" cy="41" r="0.9"/>
@@ -346,22 +402,32 @@
     <a href="/purchase/" class="launch-row {% if purchase_alert %}alert{% endif %}" aria-label="Purchase — reorder and Temu pipeline">
         <div class="row-icon">
             <svg class="glyph glyph-purchase" viewBox="0 0 64 64" aria-hidden="true">
-                {# Box outline #}
-                <rect class="stroke draw" style="--len:200; --draw-delay:.25s;"
-                      x="10" y="22" width="44" height="34" rx="2.5"/>
-                {# Twine — vertical and horizontal across the box top #}
-                <path class="stroke draw" style="--len:120; --draw-delay:.55s;"
-                      d="M 32 16 L 32 56 M 10 32 L 54 32"/>
-                {# Soft "tag" on box face #}
-                <rect class="filled-soft" x="20" y="40" width="14" height="9" rx="1.5"/>
-                <line class="stroke" x1="22" y1="44" x2="32" y2="44" stroke-width="1"/>
-                {# Bow — two filled ellipses with rotation, plus a centre knot #}
+                <g class="package-body">
+                    {# Box outline #}
+                    <rect class="stroke draw" style="--len:200; --draw-delay:.25s;"
+                          x="10" y="22" width="44" height="34" rx="2.5"/>
+                    {# Twine — vertical and horizontal across the box top #}
+                    <path class="stroke draw" style="--len:120; --draw-delay:.55s;"
+                          d="M 32 16 L 32 56 M 10 32 L 54 32"/>
+                    {# Soft "tag" on box face #}
+                    <rect class="filled-soft" x="20" y="40" width="14" height="9" rx="1.5"/>
+                    <line class="stroke" x1="22" y1="44" x2="32" y2="44" stroke-width="1"/>
+                </g>
+                {# Bow — flatter ribbon-y bow with knot rectangle and two streamer tails #}
                 <g class="bow pulse-target">
-                    <ellipse class="accent" cx="27" cy="14" rx="4.2" ry="2.5"
-                             transform="rotate(-22 27 14)"/>
-                    <ellipse class="accent" cx="37" cy="14" rx="4.2" ry="2.5"
-                             transform="rotate(22 37 14)"/>
-                    <circle class="accent" cx="32" cy="15" r="1.7"/>
+                    {# Left loop — flatter, broader #}
+                    <ellipse class="accent" cx="25" cy="14" rx="6" ry="3"
+                             transform="rotate(-12 25 14)"/>
+                    {# Right loop #}
+                    <ellipse class="accent" cx="39" cy="14" rx="6" ry="3"
+                             transform="rotate(12 39 14)"/>
+                    {# Knot in the centre — small rectangle gives it weight #}
+                    <rect class="accent" x="30.4" y="11.8" width="3.2" height="4.6" rx="0.7"/>
+                    {# Streamers/tails dropping below the knot #}
+                    <path class="accent-stroke" d="M 30.5 16.4 Q 28 19 28.6 23"
+                          stroke-width="1.6" fill="none"/>
+                    <path class="accent-stroke" d="M 33.5 16.4 Q 36 19 35.4 23"
+                          stroke-width="1.6" fill="none"/>
                 </g>
             </svg>
         </div>
@@ -390,20 +456,22 @@
     <a href="/data/" class="launch-row" aria-label="Data — export, import and change log">
         <div class="row-icon">
             <svg class="glyph glyph-data" viewBox="0 0 64 64" aria-hidden="true">
-                {# Left rolled curl #}
-                <ellipse class="stroke draw" style="--len:130; --draw-delay:.20s;"
-                         cx="14" cy="32" rx="3.5" ry="20"/>
-                {# Right rolled curl #}
-                <ellipse class="stroke draw" style="--len:130; --draw-delay:.30s;"
-                         cx="50" cy="32" rx="3.5" ry="20"/>
-                {# Body of the parchment — top and bottom edges, slight curve at the curl ends #}
-                <path class="stroke draw" style="--len:160; --draw-delay:.40s;"
-                      d="M 14 12 Q 32 9 50 12 L 50 52 Q 32 55 14 52 Z"/>
-                {# Three lines of "text" #}
-                <line class="stroke" x1="22" y1="22" x2="42" y2="22" stroke-width="1.1"/>
-                <line class="stroke" x1="22" y1="30" x2="44" y2="30" stroke-width="1.1"/>
-                <line class="stroke" x1="22" y1="38" x2="38" y2="38" stroke-width="1.1"/>
-                {# Wax seal — gold filled circle with a tiny star/X notch #}
+                <g class="scroll-body">
+                    {# Left rolled curl #}
+                    <ellipse class="stroke draw" style="--len:130; --draw-delay:.20s;"
+                             cx="14" cy="32" rx="3.5" ry="20"/>
+                    {# Right rolled curl #}
+                    <ellipse class="stroke draw" style="--len:130; --draw-delay:.30s;"
+                             cx="50" cy="32" rx="3.5" ry="20"/>
+                    {# Body of the parchment — top and bottom edges, slight curve at the curl ends #}
+                    <path class="stroke draw" style="--len:160; --draw-delay:.40s;"
+                          d="M 14 12 Q 32 9 50 12 L 50 52 Q 32 55 14 52 Z"/>
+                    {# Three lines of "text" #}
+                    <line class="stroke" x1="22" y1="22" x2="42" y2="22" stroke-width="1.1"/>
+                    <line class="stroke" x1="22" y1="30" x2="44" y2="30" stroke-width="1.1"/>
+                    <line class="stroke" x1="22" y1="38" x2="38" y2="38" stroke-width="1.1"/>
+                </g>
+                {# Wax seal — sits outside scroll-body so the unfurl doesn't drag the seal #}
                 <g class="seal pulse-target">
                     <circle class="accent" cx="44" cy="46" r="4.2"/>
                     <path class="filled-soft"
