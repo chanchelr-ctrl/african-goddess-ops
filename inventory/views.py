@@ -84,50 +84,73 @@ def temu_search_url(material) -> str:
 
 @login_required
 def dashboard(request):
-    """Operations home: KPIs + headline tables."""
+    """Workflow launchpad. Four rows — Build / Track / Purchase / Data —
+    each with three KPIs. The whole row is the link to that workflow.
+    """
     today = timezone.localdate()
-    last_30 = today - timedelta(days=30)
+    last_7 = today - timedelta(days=7)
 
-    low_stock = RawMaterial.objects.filter(
+    # ---- Build ---------------------------------------------------------
+    pvs_qs = (ProductVariant.objects
+              .filter(is_active=True)
+              .prefetch_related("bom_lines__raw_material"))
+    build_can_make = 0
+    build_total_units = 0
+    build_blocked = 0
+    for pv in pvs_qs:
+        n = pv.can_make_units
+        if n > 0:
+            build_can_make += 1
+            build_total_units += n
+        else:
+            build_blocked += 1
+    build_alert = build_can_make == 0 and build_blocked > 0
+
+    # ---- Track ---------------------------------------------------------
+    in_flight = (Project.objects
+                 .filter(status__in=("PLANNED", "IN_PROGRESS"))
+                 .prefetch_related("items"))
+    track_in_flight = in_flight.count()
+    track_planned = sum(p.total_planned_units for p in in_flight)
+    track_made = sum(p.total_made_units for p in in_flight)
+    track_progress_pct = (
+        round(100 * track_made / track_planned) if track_planned else 0
+    )
+    track_runs_week = ProductionRun.objects.filter(run_date__gte=last_7).count()
+
+    # ---- Purchase ------------------------------------------------------
+    purchase_low_stock = RawMaterial.objects.filter(
         is_active=True, current_stock__lte=F("reorder_point"),
-    ).select_related("preferred_supplier").order_by("name")
-
-    open_pos = (
-        PurchaseOrder.objects.filter(status__in=("DRAFT", "SENT"))
-        .select_related("supplier").order_by("-created_at")[:10]
-    )
-
-    in_flight_projects = (
-        Project.objects.filter(status__in=("PLANNED", "IN_PROGRESS"))
-        .order_by("-created_at")[:10]
-    )
-
-    recent_runs = (
-        ProductionRun.objects.select_related("product_variant", "product_variant__product")
-        .order_by("-run_date", "-created_at")[:10]
-    )
-
-    stock_value_zar = RawMaterial.objects.filter(is_active=True).aggregate(
-        total=Sum(F("current_stock") * F("last_paid_unit_cost"))
-    )["total"] or Decimal("0")
-
-    on_order_value = PurchaseOrder.objects.filter(status__in=("DRAFT", "SENT")).aggregate(
+    ).count()
+    open_pos = PurchaseOrder.objects.filter(status__in=("DRAFT", "SENT"))
+    purchase_open_pos = open_pos.count()
+    purchase_on_order_value = open_pos.aggregate(
         total=Sum(F("lines__pack_size") * F("lines__pack_count") * F("lines__unit_cost"))
     )["total"] or Decimal("0")
+    purchase_alert = purchase_low_stock > 0
+
+    # ---- Data ----------------------------------------------------------
+    data_materials = RawMaterial.objects.filter(is_active=True).count()
+    data_bom_lines = BomLine.objects.count()
+    data_changes_today = DataChangeLog.objects.filter(timestamp__date=today).count()
 
     return render(request, "inventory/dashboard.html", {
-        "low_stock": low_stock,
-        "low_stock_count": len(low_stock),
-        "open_pos": open_pos,
-        "open_pos_count": open_pos.count(),
-        "in_flight_projects": in_flight_projects,
-        "in_flight_projects_count": in_flight_projects.count(),
-        "recent_runs": recent_runs,
-        "stock_value_zar": stock_value_zar,
-        "on_order_value_zar": on_order_value,
-        "products_count": Product.objects.filter(is_active=True).count(),
-        "variants_count": ProductVariant.objects.filter(is_active=True).count(),
-        "materials_count": RawMaterial.objects.filter(is_active=True).count(),
+        "build_can_make": build_can_make,
+        "build_total_units": build_total_units,
+        "build_blocked": build_blocked,
+        "build_alert": build_alert,
+        "track_in_flight": track_in_flight,
+        "track_made": track_made,
+        "track_planned": track_planned,
+        "track_progress_pct": track_progress_pct,
+        "track_runs_week": track_runs_week,
+        "purchase_low_stock": purchase_low_stock,
+        "purchase_open_pos": purchase_open_pos,
+        "purchase_on_order_value": purchase_on_order_value,
+        "purchase_alert": purchase_alert,
+        "data_materials": data_materials,
+        "data_bom_lines": data_bom_lines,
+        "data_changes_today": data_changes_today,
     })
 
 

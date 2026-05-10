@@ -1,145 +1,438 @@
 {% extends "inventory/base.html" %}
 {% block title %}Dashboard — African Goddess Operations{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ---------- Dashboard launchpad ----------------------------------- */
+    .launch-hero { margin: 0.5rem 0 2rem; }
+    .launch-hero h1 {
+        font-family: Georgia, serif; font-weight: 500; letter-spacing: 0.5px;
+        font-size: 1.85rem; margin: 0;
+    }
+    .launch-hero p {
+        margin: 0.25rem 0 0; color: var(--text-muted); font-style: italic;
+        font-size: 0.95rem;
+    }
+
+    .launch-grid { display: flex; flex-direction: column; gap: 1rem; }
+
+    .launch-row {
+        display: grid;
+        grid-template-columns: 96px minmax(180px, 0.8fr) minmax(0, 2fr) 28px;
+        gap: 1.5rem;
+        align-items: center;
+        padding: 1.4rem 1.6rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow-sm);
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        overflow: hidden;
+        transition: transform .22s ease, box-shadow .22s ease,
+                    border-color .22s ease, background .22s ease;
+        opacity: 0; transform: translateY(8px);
+        animation: row-rise .55s ease-out forwards;
+    }
+    .launch-row:nth-child(1) { animation-delay: 0.05s; }
+    .launch-row:nth-child(2) { animation-delay: 0.15s; }
+    .launch-row:nth-child(3) { animation-delay: 0.25s; }
+    .launch-row:nth-child(4) { animation-delay: 0.35s; }
+    @keyframes row-rise {
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .launch-row:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 22px rgba(58,36,24,.12);
+        border-color: var(--primary);
+        text-decoration: none;
+    }
+    .launch-row:hover .row-chevron {
+        transform: translateX(4px); color: var(--primary);
+    }
+    .launch-row:hover .glyph .stroke { stroke: var(--primary); }
+    .launch-row:hover .glyph .accent { fill: var(--primary); }
+    .launch-row:hover .glyph .accent-stroke { stroke: var(--primary); }
+
+    /* Decorative shimmer that sweeps the row on hover */
+    .launch-row::before {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(110deg,
+            transparent 30%, rgba(201,163,92,0.10) 50%, transparent 70%);
+        opacity: 0; pointer-events: none; transition: opacity .35s ease;
+    }
+    .launch-row:hover::before { opacity: 1; }
+
+    /* Alert state for rows that need attention */
+    .launch-row.alert {
+        border-color: rgba(179,71,56,.35);
+        background: linear-gradient(135deg, var(--surface) 70%, var(--alert-bg) 130%);
+    }
+    .launch-row.alert .glyph .accent { fill: var(--alert); }
+    .launch-row.alert .glyph .accent-stroke { stroke: var(--alert); }
+    .launch-row.alert .pulse-target {
+        animation: alert-pulse 3.6s ease-in-out infinite;
+        transform-origin: center;
+    }
+    @keyframes alert-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.55; transform: scale(1.08); }
+    }
+
+    /* ---------- Icon column ------------------------------------------- */
+    .row-icon { width: 72px; height: 72px; }
+    .glyph {
+        width: 100%; height: 100%;
+        overflow: visible;
+    }
+    .glyph .stroke {
+        stroke: var(--text-muted); stroke-width: 1.6; fill: none;
+        stroke-linecap: round; stroke-linejoin: round;
+        transition: stroke .25s ease;
+    }
+    .glyph .accent {
+        fill: var(--gold);
+        transition: fill .25s ease, transform .35s ease;
+    }
+    .glyph .accent-stroke {
+        stroke: var(--gold); stroke-width: 1.6; fill: none;
+        stroke-linecap: round; stroke-linejoin: round;
+        transition: stroke .25s ease;
+    }
+    .glyph .filled-soft {
+        fill: var(--primary-50); transition: fill .25s ease;
+    }
+    .launch-row:hover .glyph .filled-soft { fill: var(--gold); opacity: 0.45; }
+
+    /* On-load draw-in animation for stroke paths */
+    @keyframes draw-in {
+        from { stroke-dashoffset: var(--len, 240); }
+        to   { stroke-dashoffset: 0; }
+    }
+    .glyph .draw {
+        stroke-dasharray: var(--len, 240);
+        stroke-dashoffset: var(--len, 240);
+        animation: draw-in 0.95s ease-out forwards;
+        animation-delay: var(--draw-delay, 0.3s);
+    }
+
+    /* Hourglass falling-sand loop */
+    @keyframes sand-fall {
+        0% { transform: translateY(-2px); opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 1; }
+        100% { transform: translateY(8px); opacity: 0; }
+    }
+    .glyph-track .sand-grain {
+        transform-origin: center;
+        animation: sand-fall 1.6s ease-in infinite;
+    }
+    .glyph-track .sand-grain:nth-of-type(2) { animation-delay: 0.3s; }
+    .glyph-track .sand-grain:nth-of-type(3) { animation-delay: 0.65s; }
+
+    /* Bracelet feature-bead gentle scale on hover */
+    .launch-row:hover .glyph-build .feature-bead {
+        animation: bead-bob 1.4s ease-in-out infinite;
+    }
+    @keyframes bead-bob {
+        0%, 100% { transform: scale(1); }
+        50%     { transform: scale(1.18); }
+    }
+    .glyph-build .feature-bead { transform-origin: center; transform-box: fill-box; }
+
+    /* Parcel bow gentle scale on hover */
+    .launch-row:hover .glyph-purchase .bow {
+        animation: bow-pop .5s ease-out;
+    }
+    @keyframes bow-pop {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.18); }
+    }
+    .glyph-purchase .bow { transform-origin: center; transform-box: fill-box; }
+
+    /* Scroll: nudge the seal on hover */
+    .launch-row:hover .glyph-data .seal {
+        animation: seal-press .55s ease-out;
+    }
+    @keyframes seal-press {
+        0%, 100% { transform: rotate(0); }
+        50%      { transform: rotate(-12deg) scale(1.12); }
+    }
+    .glyph-data .seal { transform-origin: center; transform-box: fill-box; }
+
+    /* ---------- Label column ------------------------------------------ */
+    .row-label h2 {
+        margin: 0; font-size: 1.45rem; font-family: Georgia, serif;
+        font-weight: 600; letter-spacing: 0.5px; color: var(--text);
+    }
+    .row-label p {
+        margin: 0.25rem 0 0; color: var(--text-muted);
+        font-style: italic; font-size: 0.88rem; line-height: 1.4;
+    }
+
+    /* ---------- KPI column -------------------------------------------- */
+    .row-kpis {
+        display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem; align-items: center;
+    }
+    .kpi-block {
+        display: flex; flex-direction: column; gap: 4px;
+        padding-left: 1.2rem; border-left: 2px solid var(--primary-50);
+    }
+    .kpi-value {
+        font-family: Georgia, serif; font-weight: 600;
+        font-size: 1.55rem; line-height: 1.05; color: var(--text);
+        letter-spacing: 0.3px;
+    }
+    .kpi-value .currency { font-size: 0.95rem; color: var(--text-muted); margin-right: 2px; }
+    .kpi-value .unit { font-size: 0.78rem; color: var(--text-muted); margin-left: 4px; font-weight: 400; }
+    .kpi-value .pct {
+        font-family: system-ui, sans-serif; font-size: 0.8rem;
+        color: var(--text-muted); margin-left: 6px; font-weight: 400;
+    }
+    .kpi-label {
+        font-size: 0.74rem; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600;
+    }
+    .launch-row.alert .kpi-block.alert-kpi .kpi-value { color: var(--alert); }
+    .launch-row.alert .kpi-block.alert-kpi { border-left-color: var(--alert); }
+
+    /* ---------- Chevron ----------------------------------------------- */
+    .row-chevron {
+        font-size: 1.4rem; color: var(--text-muted);
+        transition: transform .22s ease, color .22s ease;
+        line-height: 1; text-align: right;
+    }
+
+    /* ---------- Responsive -------------------------------------------- */
+    @media (max-width: 920px) {
+        .launch-row {
+            grid-template-columns: 64px 1fr 24px;
+            gap: 1rem; padding: 1.1rem 1.25rem;
+        }
+        .row-icon { width: 56px; height: 56px; }
+        .row-kpis {
+            grid-column: 1 / -1;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid var(--border);
+            padding-top: 0.85rem; margin-top: 0.5rem; gap: 0.85rem;
+        }
+        .kpi-block { padding-left: 0.85rem; }
+        .row-chevron { display: none; }
+    }
+    @media (max-width: 540px) {
+        .row-kpis { grid-template-columns: 1fr; }
+        .kpi-block { padding-left: 0.75rem; padding-bottom: 0.5rem; }
+    }
+
+    /* ---------- Reduced motion ---------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+        .launch-row, .glyph .draw, .glyph-track .sand-grain,
+        .glyph-build .feature-bead, .glyph-purchase .bow, .glyph-data .seal,
+        .launch-row.alert .pulse-target {
+            animation: none !important;
+        }
+        .launch-row { opacity: 1; transform: none; }
+        .glyph .draw { stroke-dashoffset: 0; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 {% with active="dashboard" %}{% endwith %}
 
-<h1 style="font-family:Georgia, serif; font-weight:500; letter-spacing:0.5px;">Today's snapshot</h1>
-<p style="color:var(--text-muted); margin-top:0; font-style:italic;">An at-a-glance view of what needs your attention right now.</p>
-
-<div class="kpi-grid">
-    <div class="kpi {% if low_stock_count %}alert{% endif %}">
-        <div class="kpi-icon">⚠</div>
-        <div class="kpi-value">{{ low_stock_count }}</div>
-        <div class="kpi-label">Materials below reorder point</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">📦</div>
-        <div class="kpi-value">{{ open_pos_count }}</div>
-        <div class="kpi-label">Purchase orders open</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">⚙</div>
-        <div class="kpi-value">{{ in_flight_projects_count }}</div>
-        <div class="kpi-label">Projects in flight</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">R</div>
-        <div class="kpi-value">R&nbsp;{{ stock_value_zar|floatformat:0 }}</div>
-        <div class="kpi-label">Stock value on shelves</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">↑</div>
-        <div class="kpi-value">R&nbsp;{{ on_order_value_zar|floatformat:0 }}</div>
-        <div class="kpi-label">Stock value on order</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">★</div>
-        <div class="kpi-value">{{ variants_count }}</div>
-        <div class="kpi-label">Active sellable SKUs</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">∞</div>
-        <div class="kpi-value">{{ materials_count }}</div>
-        <div class="kpi-label">Active raw materials</div>
-    </div>
+<div class="launch-hero">
+    <h1>Today's snapshot</h1>
+    <p>Choose a path. Each row shows what's happening — click anywhere on it to go.</p>
 </div>
 
-<section class="card">
-    <div class="card-header">
-        <h2>Materials needing reorder</h2>
-        {% if low_stock %}<a href="/purchase/" class="btn btn-sm">Go to Purchase →</a>{% endif %}
-    </div>
-    <div class="card-body">
-        {% if low_stock %}
-        <table>
-            <thead><tr><th>SKU</th><th>Material</th><th>Stock</th><th>Reorder at</th><th>Supplier</th><th></th></tr></thead>
-            <tbody>
-            {% for m in low_stock %}
-                <tr>
-                    <td><code>{{ m.sku }}</code></td>
-                    <td>{{ m.name }}</td>
-                    <td>{{ m.current_stock }} <small>{{ m.unit }}</small></td>
-                    <td>{{ m.reorder_point }} <small>{{ m.unit }}</small></td>
-                    <td>{{ m.preferred_supplier|default:"—" }}</td>
-                    <td><span class="pill pill-reorder">REORDER</span></td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">✓ Everything is above its reorder point.</div>
-        {% endif %}
-    </div>
-</section>
+<div class="launch-grid">
 
-<section class="card">
-    <div class="card-header">
-        <h2>Projects in flight</h2>
-        <a href="/build/" class="btn btn-sm">Start a build →</a>
-    </div>
-    <div class="card-body">
-        {% if in_flight_projects %}
-        <table>
-            <thead><tr><th>Name</th><th>Status</th><th>Planned</th><th>Made</th></tr></thead>
-            <tbody>
-            {% for p in in_flight_projects %}
-                <tr>
-                    <td><a href="/track/project/{{ p.pk }}/">{{ p.name }}</a></td>
-                    <td><span class="pill pill-status-{{ p.status|lower }}">{{ p.get_status_display }}</span></td>
-                    <td>{{ p.total_planned_units }}</td>
-                    <td>{{ p.total_made_units }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">No projects in flight. Use <a href="/build/">Build</a> to start one.</div>
-        {% endif %}
-    </div>
-</section>
+    {# ---------- BUILD ---------------------------------------------------- #}
+    <a href="/build/" class="launch-row {% if build_alert %}alert{% endif %}" aria-label="Build — plan and start a build">
+        <div class="row-icon">
+            <svg class="glyph glyph-build" viewBox="0 0 64 64" aria-hidden="true">
+                {# Cord/thread suggested as a dashed circle #}
+                <circle class="stroke draw" style="--len:140; --draw-delay:.15s;"
+                        cx="32" cy="32" r="22"
+                        stroke-dasharray="2 3" stroke-width="0.9"/>
+                {# Beads around the bracelet — varied sizes #}
+                <circle class="filled-soft" cx="54"   cy="32"   r="3.6"/>
+                <circle class="filled-soft" cx="47.6" cy="16.4" r="3.0"/>
+                <circle class="filled-soft" cx="32"   cy="10"   r="3.6"/>
+                <circle class="filled-soft" cx="10"   cy="32"   r="3.0"/>
+                <circle class="filled-soft" cx="16.4" cy="47.6" r="3.6"/>
+                <circle class="filled-soft" cx="32"   cy="54"   r="3.0"/>
+                <circle class="filled-soft" cx="47.6" cy="47.6" r="3.6"/>
+                {# Feature bead — gold accent #}
+                <circle class="accent feature-bead pulse-target"
+                        cx="16.4" cy="16.4" r="4.4"/>
+                {# Outline strokes for the beads (drawn after fills) #}
+                <circle class="stroke" cx="54"   cy="32"   r="3.6"/>
+                <circle class="stroke" cx="47.6" cy="16.4" r="3.0"/>
+                <circle class="stroke" cx="32"   cy="10"   r="3.6"/>
+                <circle class="stroke" cx="10"   cy="32"   r="3.0"/>
+                <circle class="stroke" cx="16.4" cy="47.6" r="3.6"/>
+                <circle class="stroke" cx="32"   cy="54"   r="3.0"/>
+                <circle class="stroke" cx="47.6" cy="47.6" r="3.6"/>
+                <circle class="stroke" cx="16.4" cy="16.4" r="4.4"/>
+            </svg>
+        </div>
+        <div class="row-label">
+            <h2>Build</h2>
+            <p>Plan &amp; start a build</p>
+        </div>
+        <div class="row-kpis">
+            <div class="kpi-block">
+                <div class="kpi-value">{{ build_can_make }}</div>
+                <div class="kpi-label">Variants you can make now</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">{{ build_total_units }} <span class="unit">units</span></div>
+                <div class="kpi-label">Total max producible</div>
+            </div>
+            <div class="kpi-block {% if build_alert %}alert-kpi{% endif %}">
+                <div class="kpi-value">{{ build_blocked }}</div>
+                <div class="kpi-label">Blocked by stock</div>
+            </div>
+        </div>
+        <div class="row-chevron">→</div>
+    </a>
 
-<section class="card">
-    <div class="card-header"><h2>Open purchase orders</h2></div>
-    <div class="card-body">
-        {% if open_pos %}
-        <table>
-            <thead><tr><th>Reference</th><th>Supplier</th><th>Status</th><th style="text-align:right;">Total</th></tr></thead>
-            <tbody>
-            {% for po in open_pos %}
-                <tr>
-                    <td><a href="/purchase/po/{{ po.pk }}/"><code>{{ po.reference }}</code></a></td>
-                    <td>{{ po.supplier.name }}</td>
-                    <td><span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span></td>
-                    <td style="text-align:right;">R&nbsp;{{ po.total_cost|floatformat:2 }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">No open purchase orders.</div>
-        {% endif %}
-    </div>
-</section>
+    {# ---------- TRACK ---------------------------------------------------- #}
+    <a href="/track/" class="launch-row" aria-label="Track — in-flight projects and recent runs">
+        <div class="row-icon">
+            <svg class="glyph glyph-track" viewBox="0 0 64 64" aria-hidden="true">
+                {# Top frame, side funnels, bottom frame #}
+                <path class="stroke draw" style="--len:170; --draw-delay:.20s;"
+                      d="M 14 8 L 50 8 M 14 56 L 50 56 M 14 8 L 32 32 L 50 8 M 14 56 L 32 32 L 50 56"/>
+                {# Sand in the top chamber — soft fill #}
+                <path class="filled-soft" d="M 19 12 L 45 12 L 34 28 L 30 28 Z"/>
+                {# Pile in the bottom chamber — gold accent #}
+                <path class="accent" d="M 22 54 L 42 54 L 36 47 L 28 47 Z"/>
+                {# Falling sand grains #}
+                <circle class="accent sand-grain" cx="32" cy="35" r="0.9"/>
+                <circle class="accent sand-grain" cx="32" cy="38" r="0.9"/>
+                <circle class="accent sand-grain" cx="32" cy="41" r="0.9"/>
+            </svg>
+        </div>
+        <div class="row-label">
+            <h2>Track</h2>
+            <p>In-flight work</p>
+        </div>
+        <div class="row-kpis">
+            <div class="kpi-block">
+                <div class="kpi-value">{{ track_in_flight }}</div>
+                <div class="kpi-label">Projects in flight</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">
+                    {{ track_made }} / {{ track_planned }}
+                    {% if track_planned %}<span class="pct">({{ track_progress_pct }}%)</span>{% endif %}
+                </div>
+                <div class="kpi-label">Units made / planned</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">{{ track_runs_week }}</div>
+                <div class="kpi-label">Runs this week</div>
+            </div>
+        </div>
+        <div class="row-chevron">→</div>
+    </a>
 
-<section class="card">
-    <div class="card-header"><h2>Recent production runs</h2></div>
-    <div class="card-body">
-        {% if recent_runs %}
-        <table>
-            <thead><tr><th>Date</th><th>SKU</th><th style="text-align:right;">Quantity</th></tr></thead>
-            <tbody>
-            {% for r in recent_runs %}
-                <tr>
-                    <td>{{ r.run_date }}</td>
-                    <td><code>{{ r.product_variant.sku }}</code> — {{ r.product_variant.product.name }}</td>
-                    <td style="text-align:right;">{{ r.quantity }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">No production runs recorded yet.</div>
-        {% endif %}
-    </div>
-</section>
+    {# ---------- PURCHASE ------------------------------------------------- #}
+    <a href="/purchase/" class="launch-row {% if purchase_alert %}alert{% endif %}" aria-label="Purchase — reorder and Temu pipeline">
+        <div class="row-icon">
+            <svg class="glyph glyph-purchase" viewBox="0 0 64 64" aria-hidden="true">
+                {# Box outline #}
+                <rect class="stroke draw" style="--len:200; --draw-delay:.25s;"
+                      x="10" y="22" width="44" height="34" rx="2.5"/>
+                {# Twine — vertical and horizontal across the box top #}
+                <path class="stroke draw" style="--len:120; --draw-delay:.55s;"
+                      d="M 32 16 L 32 56 M 10 32 L 54 32"/>
+                {# Soft "tag" on box face #}
+                <rect class="filled-soft" x="20" y="40" width="14" height="9" rx="1.5"/>
+                <line class="stroke" x1="22" y1="44" x2="32" y2="44" stroke-width="1"/>
+                {# Bow — two filled ellipses with rotation, plus a centre knot #}
+                <g class="bow pulse-target">
+                    <ellipse class="accent" cx="27" cy="14" rx="4.2" ry="2.5"
+                             transform="rotate(-22 27 14)"/>
+                    <ellipse class="accent" cx="37" cy="14" rx="4.2" ry="2.5"
+                             transform="rotate(22 37 14)"/>
+                    <circle class="accent" cx="32" cy="15" r="1.7"/>
+                </g>
+            </svg>
+        </div>
+        <div class="row-label">
+            <h2>Purchase</h2>
+            <p>Reorder &amp; Temu pipeline</p>
+        </div>
+        <div class="row-kpis">
+            <div class="kpi-block {% if purchase_alert %}alert-kpi{% endif %}">
+                <div class="kpi-value">{{ purchase_low_stock }}</div>
+                <div class="kpi-label">Materials to reorder</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">{{ purchase_open_pos }}</div>
+                <div class="kpi-label">Open POs</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value"><span class="currency">R</span>{{ purchase_on_order_value|floatformat:0 }}</div>
+                <div class="kpi-label">Value on order</div>
+            </div>
+        </div>
+        <div class="row-chevron">→</div>
+    </a>
+
+    {# ---------- DATA ----------------------------------------------------- #}
+    <a href="/data/" class="launch-row" aria-label="Data — export, import and change log">
+        <div class="row-icon">
+            <svg class="glyph glyph-data" viewBox="0 0 64 64" aria-hidden="true">
+                {# Left rolled curl #}
+                <ellipse class="stroke draw" style="--len:130; --draw-delay:.20s;"
+                         cx="14" cy="32" rx="3.5" ry="20"/>
+                {# Right rolled curl #}
+                <ellipse class="stroke draw" style="--len:130; --draw-delay:.30s;"
+                         cx="50" cy="32" rx="3.5" ry="20"/>
+                {# Body of the parchment — top and bottom edges, slight curve at the curl ends #}
+                <path class="stroke draw" style="--len:160; --draw-delay:.40s;"
+                      d="M 14 12 Q 32 9 50 12 L 50 52 Q 32 55 14 52 Z"/>
+                {# Three lines of "text" #}
+                <line class="stroke" x1="22" y1="22" x2="42" y2="22" stroke-width="1.1"/>
+                <line class="stroke" x1="22" y1="30" x2="44" y2="30" stroke-width="1.1"/>
+                <line class="stroke" x1="22" y1="38" x2="38" y2="38" stroke-width="1.1"/>
+                {# Wax seal — gold filled circle with a tiny star/X notch #}
+                <g class="seal pulse-target">
+                    <circle class="accent" cx="44" cy="46" r="4.2"/>
+                    <path class="filled-soft"
+                          d="M 44 43.5 L 45 46 L 44 48.5 L 43 46 Z"
+                          stroke="none"/>
+                </g>
+            </svg>
+        </div>
+        <div class="row-label">
+            <h2>Data</h2>
+            <p>Export, import &amp; change log</p>
+        </div>
+        <div class="row-kpis">
+            <div class="kpi-block">
+                <div class="kpi-value">{{ data_materials }}</div>
+                <div class="kpi-label">Active raw materials</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">{{ data_bom_lines }}</div>
+                <div class="kpi-label">BOM spec lines</div>
+            </div>
+            <div class="kpi-block">
+                <div class="kpi-value">{{ data_changes_today }}</div>
+                <div class="kpi-label">Changes today</div>
+            </div>
+        </div>
+        <div class="row-chevron">→</div>
+    </a>
+
+</div>
+
 {% endblock %}
