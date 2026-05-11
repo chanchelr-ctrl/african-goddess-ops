@@ -779,22 +779,11 @@ def data_index(request):
             "stock_status": status,
         })
 
-    # Chart aggregates
-    stock_health_counter = Counter(e["stock_status"] for e in enriched)
-    stock_health_data = [
-        {"label": "OK",  "value": stock_health_counter.get("ok", 0),  "color": "#4d7a4d"},
-        {"label": "Low", "value": stock_health_counter.get("low", 0), "color": "#b0794a"},
-        {"label": "Out", "value": stock_health_counter.get("out", 0), "color": "#c84432"},
-    ]
-
+    # Chart aggregates (Stock Health + Shape charts were removed; the per-row
+    # stock_status field on materials_data still feeds the table's status pill)
     category_counter = Counter(e["category"] for e in enriched)
     category_data = [
         {"label": k, "value": v} for k, v in category_counter.most_common()
-    ]
-
-    shape_counter = Counter((e["shape"] or "Other").strip() or "Other" for e in enriched)
-    shape_data = [
-        {"label": k, "value": v} for k, v in shape_counter.most_common(10)
     ]
 
     # Stock value (ZAR) by material category — replaces the old size-band chart
@@ -820,9 +809,7 @@ def data_index(request):
         # Pass raw Python objects — the template's |json_script will encode
         # them once. (Don't double-encode with json.dumps first.)
         "materials_data":    enriched,
-        "stock_health_data": stock_health_data,
         "category_data":     category_data,
-        "shape_data":        shape_data,
         "value_data":        value_data,
         "recent_changes":    DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50],
         "counts":            counts,

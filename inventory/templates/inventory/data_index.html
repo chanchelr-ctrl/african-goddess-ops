@@ -25,32 +25,32 @@
         margin-left: auto; margin-right: auto;
     }
 
-    /* Chart grid — five charts side by side, full width */
+    /* Chart grid — three charts side by side, full width */
     .chart-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 1rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
         margin-bottom: 2rem;
     }
     .chart-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 1rem 1.1rem;
+        padding: 1rem 1.25rem 1.1rem;
         box-shadow: var(--shadow-sm);
         position: relative;
         transition: box-shadow .2s ease, border-color .2s ease;
         display: flex;
         flex-direction: column;
-        min-height: 420px;
+        min-height: 300px;
     }
     .chart-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-50); }
 
     /* Fixed-size chart canvas — every chart fills exactly this box so
        chart sizes stay consistent regardless of legend length. */
     .chart-canvas {
-        flex: 0 0 240px;
-        height: 240px;
+        flex: 0 0 200px;
+        height: 200px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -59,7 +59,7 @@
     .chart-canvas svg {
         width: 100%;
         height: 100%;
-        max-height: 240px;
+        max-height: 200px;
     }
     .chart-card-header {
         display: flex; flex-direction: column; gap: 2px;
@@ -269,25 +269,11 @@
 
 {# ============== JSON data dumps for client-side rendering ============== #}
 {{ materials_data|json_script:"materials-data" }}
-{{ stock_health_data|json_script:"stock-health-data" }}
 {{ category_data|json_script:"category-data" }}
-{{ shape_data|json_script:"shape-data" }}
 {{ value_data|json_script:"value-data" }}
 
-{# ============== Chart grid — 5 in a row ============== #}
+{# ============== Chart grid — 3 in a row ============== #}
 <div class="chart-grid">
-
-    <div class="chart-card">
-        <div class="chart-card-header" data-chart-view="stock-health">
-            <h3>Stock health</h3>
-            <span class="meta">click slice to drill</span>
-        </div>
-        <div class="bead-breadcrumb" id="crumbs-stock-health"></div>
-        <div class="chart-canvas">
-            <svg id="chart-stock-health" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
-        </div>
-        <div class="donut-legend" id="legend-stock-health"></div>
-    </div>
 
     <div class="chart-card">
         <div class="chart-card-header" data-chart-view="category">
@@ -311,18 +297,6 @@
             <svg id="chart-value" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
         </div>
         <div class="donut-legend" id="legend-value"></div>
-    </div>
-
-    <div class="chart-card">
-        <div class="chart-card-header" data-chart-view="shape">
-            <h3>By shape — top 10</h3>
-            <span class="meta">click bar to drill</span>
-        </div>
-        <div class="bead-breadcrumb" id="crumbs-shape"></div>
-        <div class="chart-canvas">
-            <svg id="chart-shape" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
-        </div>
-        <div class="donut-legend" id="legend-shape"></div>
     </div>
 
     <div class="chart-card">
@@ -466,11 +440,9 @@
 'use strict';
 
 // ----- Data ---------------------------------------------------------------
-const MATERIALS    = JSON.parse(document.getElementById('materials-data').textContent);
-const STOCK_HEALTH = JSON.parse(document.getElementById('stock-health-data').textContent);
-const CATEGORY     = JSON.parse(document.getElementById('category-data').textContent);
-const SHAPE        = JSON.parse(document.getElementById('shape-data').textContent);
-const VALUE        = JSON.parse(document.getElementById('value-data').textContent);
+const MATERIALS = JSON.parse(document.getElementById('materials-data').textContent);
+const CATEGORY  = JSON.parse(document.getElementById('category-data').textContent);
+const VALUE     = JSON.parse(document.getElementById('value-data').textContent);
 
 function formatR(n) {
     n = Math.round(n);
@@ -526,21 +498,13 @@ let activeFilter = null;  // null or { type, value, label }
 // Each chart has a drill `path` (array of selected segment labels).
 // Level = path.length. Level 0 = root view.
 const drill = {
-    'stock-health': { path: [] },
-    'category':     { path: [] },
-    'value':        { path: [] },
-    'shape':        { path: [] },
-    'beads':        { path: [] },
+    'category': { path: [] },
+    'value':    { path: [] },
+    'beads':    { path: [] },
 };
 
 // Each chart specifies the drill dimensions in order (which field is filtered at each step).
 const DRILL_SPEC = {
-    'stock-health': {
-        rootField: 'stock_status',     // L0 aggregates by this
-        steps: [
-            { filterField: 'stock_status', useValueLowercase: true, nextField: 'category' },
-        ],
-    },
     'category': {
         rootField: 'category',
         steps: [
@@ -552,12 +516,6 @@ const DRILL_SPEC = {
         rootField: 'category',
         steps: [
             { filterField: 'category', nextField: 'top_materials' },         // terminal
-        ],
-    },
-    'shape': {
-        rootField: 'shape',
-        steps: [
-            { filterField: 'shape', nextField: 'category' },
         ],
     },
     'beads': {
@@ -572,11 +530,9 @@ const DRILL_SPEC = {
 };
 
 const CHART_TITLES = {
-    'stock-health': 'Status',
-    'category':     'Category',
-    'value':        'Category',
-    'shape':        'Shape',
-    'beads':        'Beads',
+    'category': 'Category',
+    'value':    'Category',
+    'beads':    'Beads',
 };
 
 // ----- SVG geometry helpers ----------------------------------------------
@@ -859,11 +815,9 @@ function aggregateForChart(chartKey, items, field) {
 
 // Pick a chart type per chart × level. Each level transitions to a new viz.
 const CHART_VIZ_PER_LEVEL = {
-    'stock-health': ['donut', 'donut'],
-    'category':     ['donut', 'hbar', 'hbar-materials'],
-    'value':        ['donut-value', 'hbar-value-materials'],
-    'shape':        ['hbar', 'donut'],
-    'beads':        ['donut', 'hbar', 'vbar', 'hbar-value-materials'],
+    'category': ['donut', 'hbar', 'hbar-materials'],
+    'value':    ['donut-value', 'hbar-value-materials'],
+    'beads':    ['donut', 'hbar', 'vbar', 'hbar-value-materials'],
 };
 
 // Filter MATERIALS to the items matching the current drill path of a chart.
@@ -916,11 +870,6 @@ function renderChart(chartKey) {
     const data = aggData.map(d => {
         let color = colourFor(d.label);
         if (field === 'colour_family' && COLOUR_FAMILY_SWATCH[d.label]) color = COLOUR_FAMILY_SWATCH[d.label];
-        if (chartKey === 'stock-health' && level === 0) {
-            // Special traffic-light colours
-            const STATUS_COLOR = { OK: '#607f4a', Low: '#d8a050', Out: '#aa3a1e' };
-            color = STATUS_COLOR[d.label] || color;
-        }
         return Object.assign({}, d, { color });
     });
 
@@ -1137,7 +1086,7 @@ function renderTable() {
 document.getElementById('search-input').addEventListener('input', renderTable);
 
 // ----- Initial render ---------------------------------------------------
-['stock-health', 'category', 'value', 'shape', 'beads'].forEach(renderChart);
+['category', 'value', 'beads'].forEach(renderChart);
 renderTable();
 
 })();
