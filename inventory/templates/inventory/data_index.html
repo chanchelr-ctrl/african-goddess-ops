@@ -4,8 +4,11 @@
 {% block extra_head %}
 <style>
     /* ==========================================================
-       Inventory BI dashboard
+       Inventory BI dashboard — uses the full viewport width
+       (overrides the default 1200px page constraint).
        ========================================================== */
+
+    .page { max-width: none !important; padding-left: 1.5rem; padding-right: 1.5rem; }
 
     .bi-hero h1 {
         font-family: Georgia, serif; font-weight: 500; letter-spacing: 0.4px;
@@ -13,26 +16,51 @@
     }
     .bi-hero p { color: var(--text-muted); font-style: italic; margin: 0 0 1.5rem; }
 
-    /* Chart grid — five charts side by side */
+    /* Constrain certain narrower elements so the page doesn't feel sparse */
+    .bi-hero,
+    .table-controls,
+    .data-table-wrap,
+    .bottom-panel {
+        max-width: 1700px;
+        margin-left: auto; margin-right: auto;
+    }
+
+    /* Chart grid — five charts side by side, full width */
     .chart-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 0.85rem;
+        gap: 1rem;
         margin-bottom: 2rem;
     }
     .chart-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 0.85rem 0.95rem;
+        padding: 1rem 1.1rem;
         box-shadow: var(--shadow-sm);
         position: relative;
         transition: box-shadow .2s ease, border-color .2s ease;
-        min-height: 320px;
         display: flex;
         flex-direction: column;
+        min-height: 420px;
     }
     .chart-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-50); }
+
+    /* Fixed-size chart canvas — every chart fills exactly this box so
+       chart sizes stay consistent regardless of legend length. */
+    .chart-canvas {
+        flex: 0 0 240px;
+        height: 240px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .chart-canvas svg {
+        width: 100%;
+        height: 100%;
+        max-height: 240px;
+    }
     .chart-card-header {
         display: flex; flex-direction: column; gap: 2px;
         margin-bottom: 0.45rem; cursor: pointer; user-select: none;
@@ -58,9 +86,12 @@
     .donut-slice:hover { opacity: 0.82; transform: scale(1.04); }
     .donut-legend {
         display: grid; grid-template-columns: 1fr; gap: 0.18rem;
-        margin-top: 0.55rem;
-        max-height: 90px; overflow-y: auto;
+        margin-top: 0.65rem;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        min-height: 0;
     }
+    .donut-legend:empty { display: none; }
     .legend-item {
         display: flex; align-items: center; gap: 0.4rem;
         font-size: 0.68rem; cursor: pointer;
@@ -252,7 +283,9 @@
             <span class="meta">click slice to drill</span>
         </div>
         <div class="bead-breadcrumb" id="crumbs-stock-health"></div>
-        <svg class="chart-svg" id="chart-stock-health" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="chart-canvas">
+            <svg id="chart-stock-health" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
         <div class="donut-legend" id="legend-stock-health"></div>
     </div>
 
@@ -262,7 +295,9 @@
             <span class="meta">click slice to drill</span>
         </div>
         <div class="bead-breadcrumb" id="crumbs-category"></div>
-        <svg class="chart-svg" id="chart-category" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="chart-canvas">
+            <svg id="chart-category" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
         <div class="donut-legend" id="legend-category"></div>
     </div>
 
@@ -272,7 +307,9 @@
             <span class="meta">click slice to drill</span>
         </div>
         <div class="bead-breadcrumb" id="crumbs-value"></div>
-        <svg class="chart-svg" id="chart-value" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="chart-canvas">
+            <svg id="chart-value" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
         <div class="donut-legend" id="legend-value"></div>
     </div>
 
@@ -282,7 +319,10 @@
             <span class="meta">click bar to drill</span>
         </div>
         <div class="bead-breadcrumb" id="crumbs-shape"></div>
-        <svg class="chart-svg" id="chart-shape" viewBox="0 0 280 260" aria-hidden="true"></svg>
+        <div class="chart-canvas">
+            <svg id="chart-shape" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
+        <div class="donut-legend" id="legend-shape"></div>
     </div>
 
     <div class="chart-card">
@@ -291,7 +331,10 @@
             <span class="meta">click to go deeper</span>
         </div>
         <div class="bead-breadcrumb" id="crumbs-beads"></div>
-        <svg class="chart-svg" id="chart-beads" viewBox="0 0 280 260" aria-hidden="true"></svg>
+        <div class="chart-canvas">
+            <svg id="chart-beads" viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
+        <div class="donut-legend" id="legend-beads"></div>
     </div>
 
 </div>
@@ -568,13 +611,16 @@ function moveTooltip(ev) {
 function hideTooltip() { tooltipEl.classList.remove('visible'); }
 
 // ----- Donut renderer ----------------------------------------------------
+// All chart SVGs use a 240×240 viewBox so they fit the chart-canvas
+// container with proper preserveAspectRatio centering.
 function renderDonut(svgId, legendId, data, opts) {
     opts = opts || {};
     const svg = document.getElementById(svgId);
     if (!svg) return;
     svg.innerHTML = '';
+    svg.setAttribute('viewBox', '0 0 240 240');
     const total = data.reduce((s, d) => s + d.value, 0);
-    const cx = 100, cy = 100, rO = 78, rI = 50;
+    const cx = 120, cy = 120, rO = 95, rI = 62;
 
     if (total === 0) {
         const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -619,22 +665,22 @@ function renderDonut(svgId, legendId, data, opts) {
     totalText.setAttribute('font-weight', '600');
     totalText.setAttribute('fill', 'var(--text)');
     const displayValue = opts.centerValue !== undefined ? opts.centerValue : total;
-    // Auto-shrink large strings so they fit inside the donut hole
+    // Auto-shrink long strings so they fit inside the donut hole
     const displayLen = String(displayValue).length;
-    let fontSize = 24;
-    if (displayLen > 6)  fontSize = 19;
-    if (displayLen > 9)  fontSize = 15;
-    if (displayLen > 12) fontSize = 12;
+    let fontSize = 30;
+    if (displayLen > 6)  fontSize = 22;
+    if (displayLen > 9)  fontSize = 17;
+    if (displayLen > 12) fontSize = 14;
     totalText.setAttribute('font-size', String(fontSize));
     totalText.textContent = displayValue;
     svg.appendChild(totalText);
     const totalLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    totalLabel.setAttribute('x', cx); totalLabel.setAttribute('y', cy + 13);
+    totalLabel.setAttribute('x', cx); totalLabel.setAttribute('y', cy + 16);
     totalLabel.setAttribute('text-anchor', 'middle');
     totalLabel.setAttribute('font-family', 'system-ui, sans-serif');
-    totalLabel.setAttribute('font-size', '9.5');
+    totalLabel.setAttribute('font-size', '11');
     totalLabel.setAttribute('font-weight', '600');
-    totalLabel.setAttribute('letter-spacing', '0.5');
+    totalLabel.setAttribute('letter-spacing', '0.6');
     totalLabel.setAttribute('text-transform', 'uppercase');
     totalLabel.setAttribute('fill', 'var(--text-muted)');
     totalLabel.textContent = (opts.centerLabel || 'TOTAL');
@@ -644,6 +690,7 @@ function renderDonut(svgId, legendId, data, opts) {
     if (legendId) {
         const legend = document.getElementById(legendId);
         legend.innerHTML = '';
+        const fmt = opts.legendValueFormatter || ((v) => v);
         data.forEach(d => {
             const item = document.createElement('div');
             item.className = 'legend-item';
@@ -651,7 +698,7 @@ function renderDonut(svgId, legendId, data, opts) {
             item.innerHTML = `
                 <span class="legend-swatch" style="background:${fill};"></span>
                 <span class="legend-label">${d.label}</span>
-                <span class="legend-value">${d.value}</span>`;
+                <span class="legend-value">${fmt(d.value)}</span>`;
             item.addEventListener('click', () => opts.onSliceClick && opts.onSliceClick(d.label));
             legend.appendChild(item);
         });
@@ -666,18 +713,19 @@ function renderHBars(svgId, data, opts) {
     svg.innerHTML = '';
     if (data.length === 0) return;
 
-    const padLeft = opts.padLeft || 140;
-    const padRight = 50;
-    const padTop = 8;
-    const padBot = 8;
-    const vbWidth = 480;
-    const vbHeight = Math.max(180, data.length * 26 + padTop + padBot);
+    // Fixed viewBox matches the HTML — chart-canvas controls the rendered size
+    const padLeft = opts.padLeft || 130;
+    const padRight = 55;
+    const padTop = 10;
+    const padBot = 10;
+    const vbWidth = 400;
+    const vbHeight = 240;
     svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
 
     const max = Math.max.apply(null, data.map(d => d.value));
     const chartWidth = vbWidth - padLeft - padRight;
     const rowHeight = (vbHeight - padTop - padBot) / data.length;
-    const barHeight = Math.min(20, rowHeight - 6);
+    const barHeight = Math.min(22, Math.max(10, rowHeight - 4));
 
     data.forEach((d, i) => {
         const y = padTop + i * rowHeight + (rowHeight - barHeight) / 2;
@@ -725,8 +773,8 @@ function renderVBars(svgId, data, opts) {
     svg.innerHTML = '';
     if (data.length === 0) return;
 
-    const padLeft = 24, padRight = 12, padTop = 16, padBot = 28;
-    const vbWidth = 340, vbHeight = 220;
+    const padLeft = 24, padRight = 14, padTop = 18, padBot = 32;
+    const vbWidth = 240, vbHeight = 240;
     svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
 
     const max = Math.max.apply(null, data.map(d => d.value));
@@ -857,7 +905,7 @@ function renderChart(chartKey) {
     // a horizontal bar of individual materials. Otherwise aggregate by field.
     if (field === 'top_materials') {
         renderTopMaterialsBar(svg, items, { onClick: onSelect, byValue: (chartKey === 'value' || chartKey === 'beads') });
-        if (legend) legend.style.display = 'none';
+        if (legend) legend.innerHTML = '';
         return;
     }
 
@@ -880,20 +928,21 @@ function renderChart(chartKey) {
         const total = data.reduce((s, d) => s + d.value, 0);
         const centerLabel = (vizType === 'donut-value') ? 'STOCK R' : (chartKey === 'beads' ? 'BEADS' : 'TOTAL');
         const centerValue = (vizType === 'donut-value') ? formatR(total) : total;
-        // Only render legend on root level
+        // Legend only on root level
         const useLegend = (level === 0 && legend) ? ('legend-' + chartKey) : null;
-        if (legend) legend.style.display = (level === 0) ? '' : 'none';
+        if (legend && level !== 0) legend.innerHTML = '';
         renderDonut('chart-' + chartKey, useLegend, data, {
             centerLabel: centerLabel,
             centerValue: centerValue,
+            legendValueFormatter: (vizType === 'donut-value') ? formatR : null,
             onSliceClick: onSelect,
         });
     } else if (vizType === 'hbar') {
         renderHBars('chart-' + chartKey, data, {
-            padLeft: 90,
+            padLeft: 110,
             onBarClick: onSelect,
         });
-        if (legend) legend.style.display = 'none';
+        if (legend) legend.innerHTML = '';
     } else if (vizType === 'vbar') {
         const order = ['4 mm', '6 mm', '8 mm', '10 mm', '12 mm', '12 mm+', 'n/a'];
         const ordered = order.map(s => data.find(d => d.label === s)).filter(Boolean);
@@ -901,7 +950,7 @@ function renderChart(chartKey) {
             color: PALETTE[0],
             onBarClick: onSelect,
         });
-        if (legend) legend.style.display = 'none';
+        if (legend) legend.innerHTML = '';
     }
 }
 
