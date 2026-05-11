@@ -255,47 +255,56 @@
 {{ stock_health_data|json_script:"stock-health-data" }}
 {{ category_data|json_script:"category-data" }}
 {{ shape_data|json_script:"shape-data" }}
-{{ size_data|json_script:"size-data" }}
+{{ value_data|json_script:"value-data" }}
 
 {# ============== Chart grid ============== #}
 <div class="chart-grid">
 
-    {# 1: Stock health donut #}
+    {# 1: Stock health donut — drillable #}
     <div class="chart-card col-4">
-        <div class="chart-card-header" data-chart-view="stock_status">
+        <div class="chart-card-header" data-chart-view="stock-health">
             <h3>Stock health</h3>
-            <span class="meta">click chart to view all</span>
+            <span class="meta">click slice to drill in</span>
         </div>
+        <div class="bead-breadcrumb" id="crumbs-stock-health"></div>
         <svg class="chart-svg" id="chart-stock-health" viewBox="0 0 200 200" aria-hidden="true"></svg>
         <div class="donut-legend" id="legend-stock-health"></div>
+        <div class="bead-detail-list" id="list-stock-health" style="display:none;"></div>
     </div>
 
-    {# 2: Material category donut #}
+    {# 2: Material category donut — drillable #}
     <div class="chart-card col-4">
         <div class="chart-card-header" data-chart-view="category">
             <h3>By material category</h3>
-            <span class="meta">click slice to filter</span>
+            <span class="meta">click slice to drill in</span>
         </div>
+        <div class="bead-breadcrumb" id="crumbs-category"></div>
         <svg class="chart-svg" id="chart-category" viewBox="0 0 200 200" aria-hidden="true"></svg>
         <div class="donut-legend" id="legend-category"></div>
+        <div class="bead-detail-list" id="list-category" style="display:none;"></div>
     </div>
 
-    {# 4: Size band bars #}
+    {# 4 (NEW): Stock value (ZAR) donut — drillable #}
     <div class="chart-card col-4">
-        <div class="chart-card-header" data-chart-view="size_band">
-            <h3>By size band</h3>
-            <span class="meta">click bar to filter</span>
+        <div class="chart-card-header" data-chart-view="value">
+            <h3>Stock value (ZAR)</h3>
+            <span class="meta">click slice to drill in</span>
         </div>
-        <svg class="chart-svg" id="chart-size" viewBox="0 0 340 220" aria-hidden="true"></svg>
+        <div class="bead-breadcrumb" id="crumbs-value"></div>
+        <svg class="chart-svg" id="chart-value" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="donut-legend" id="legend-value"></div>
+        <div class="bead-detail-list" id="list-value" style="display:none;"></div>
     </div>
 
-    {# 3: Shape horizontal bars (top 10) #}
+    {# 3: Shape horizontal bars (top 10) — drillable #}
     <div class="chart-card col-6">
         <div class="chart-card-header" data-chart-view="shape">
             <h3>By shape — top 10</h3>
-            <span class="meta">click bar to filter</span>
+            <span class="meta">click bar to drill in</span>
         </div>
+        <div class="bead-breadcrumb" id="crumbs-shape"></div>
         <svg class="chart-svg" id="chart-shape" viewBox="0 0 480 260" aria-hidden="true"></svg>
+        <div class="bead-detail-list" id="list-shape" style="display:none;"></div>
     </div>
 
     {# 5: Bead Analysis drill-down (the feature chart) #}
@@ -442,7 +451,12 @@ const MATERIALS    = JSON.parse(document.getElementById('materials-data').textCo
 const STOCK_HEALTH = JSON.parse(document.getElementById('stock-health-data').textContent);
 const CATEGORY     = JSON.parse(document.getElementById('category-data').textContent);
 const SHAPE        = JSON.parse(document.getElementById('shape-data').textContent);
-const SIZE         = JSON.parse(document.getElementById('size-data').textContent);
+const VALUE        = JSON.parse(document.getElementById('value-data').textContent);
+
+function formatR(n) {
+    n = Math.round(n);
+    return 'R ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 
 // ----- Brand palette (matches Studio Neutral CSS vars) -------------------
 const PALETTE = [
@@ -490,6 +504,37 @@ const COLOUR_FAMILY_SWATCH = {
 // ----- State --------------------------------------------------------------
 let activeFilter = null;  // null or { type, value, label }
 let beadDrill = { level: 0, path: [] };  // path = [bead_cat?, colour_family?, size_band?]
+
+// Each main chart has its own drill state. Level 0 = chart, Level 1 = cards.
+const drill = {
+    'stock-health': { level: 0, filter: null },
+    'category':     { level: 0, filter: null },
+    'value':        { level: 0, filter: null },
+    'shape':        { level: 0, filter: null },
+};
+
+// Map drill chart key -> how to filter MATERIALS for the cards view
+const CHART_FILTERS = {
+    'stock-health': (m, v) => m.stock_status === v.toLowerCase(),
+    'category':     (m, v) => m.category === v,
+    'value':        (m, v) => m.category === v,
+    'shape':        (m, v) => (m.shape || 'Other') === v,
+};
+
+// Map drill chart key -> filter type for global table filter
+const CHART_FILTER_TYPES = {
+    'stock-health': 'stock_status',
+    'category':     'category',
+    'value':        'category',
+    'shape':        'shape',
+};
+
+const CHART_TITLES = {
+    'stock-health': 'Status',
+    'category':     'Category',
+    'value':        'Category',
+    'shape':        'Shape',
+};
 
 // ----- SVG geometry helpers ----------------------------------------------
 function polarToCartesian(cx, cy, r, angleRad) {
@@ -571,10 +616,17 @@ function renderDonut(svgId, legendId, data, opts) {
     totalText.setAttribute('x', cx); totalText.setAttribute('y', cy - 4);
     totalText.setAttribute('text-anchor', 'middle');
     totalText.setAttribute('font-family', 'Georgia, serif');
-    totalText.setAttribute('font-size', '24');
     totalText.setAttribute('font-weight', '600');
     totalText.setAttribute('fill', 'var(--text)');
-    totalText.textContent = total;
+    const displayValue = opts.centerValue !== undefined ? opts.centerValue : total;
+    // Auto-shrink large strings so they fit inside the donut hole
+    const displayLen = String(displayValue).length;
+    let fontSize = 24;
+    if (displayLen > 6)  fontSize = 19;
+    if (displayLen > 9)  fontSize = 15;
+    if (displayLen > 12) fontSize = 12;
+    totalText.setAttribute('font-size', String(fontSize));
+    totalText.textContent = displayValue;
     svg.appendChild(totalText);
     const totalLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     totalLabel.setAttribute('x', cx); totalLabel.setAttribute('y', cy + 13);
@@ -860,6 +912,150 @@ function renderBreadcrumbs(count) {
     el.appendChild(meta);
 }
 
+// ----- Generic chart drill-down (4 main charts) -------------------------
+const CHART_DATA = {
+    'stock-health': STOCK_HEALTH,
+    'category':     CATEGORY,
+    'value':        VALUE,
+    'shape':        SHAPE,
+};
+
+function renderChartCards(listEl, items, opts) {
+    opts = opts || {};
+    listEl.innerHTML = '';
+    if (items.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.gridColumn = '1 / -1';
+        empty.style.color = 'var(--text-muted)';
+        empty.style.fontStyle = 'italic';
+        empty.style.textAlign = 'center';
+        empty.style.padding = '1rem';
+        empty.textContent = 'No materials in this segment.';
+        listEl.appendChild(empty);
+        return;
+    }
+    items.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'bead-detail-card';
+        const showValue = opts.showValue !== false;
+        card.innerHTML = `
+            <div class="sku">${m.sku.slice(0, 32)}${m.sku.length > 32 ? '…' : ''}</div>
+            <div class="name">${m.name.slice(0, 42)}${m.name.length > 42 ? '…' : ''}</div>
+            <div class="stats">
+                <span>Stock: <strong>${m.current_stock}</strong></span>
+                ${showValue ? `<span>${formatR(m.stock_value)}</span>` : ''}
+            </div>`;
+        card.addEventListener('click', () => {
+            setFilter('sku', m.sku, `Material: ${m.sku}`);
+        });
+        listEl.appendChild(card);
+    });
+}
+
+function renderChartCrumbs(chartKey) {
+    const el = document.getElementById('crumbs-' + chartKey);
+    if (!el) return;
+    const state = drill[chartKey];
+    el.innerHTML = '';
+    if (state.level === 0) return;  // hide breadcrumb at root
+    const root = document.createElement('span');
+    root.className = 'bead-crumb';
+    root.textContent = 'All';
+    root.addEventListener('click', () => resetChart(chartKey));
+    el.appendChild(root);
+    const sep = document.createElement('span');
+    sep.className = 'bead-crumb-sep'; sep.textContent = '›';
+    el.appendChild(sep);
+    const current = document.createElement('span');
+    current.className = 'bead-crumb current';
+    current.textContent = state.filter;
+    el.appendChild(current);
+}
+
+function renderChartL0(chartKey) {
+    const data = CHART_DATA[chartKey];
+    const svg = document.getElementById('chart-' + chartKey);
+    const list = document.getElementById('list-' + chartKey);
+    const legend = document.getElementById('legend-' + chartKey);
+    if (svg) svg.style.display = 'block';
+    if (list) list.style.display = 'none';
+    if (legend) legend.style.display = '';
+
+    const onSlice = (label) => drillChart(chartKey, label);
+
+    if (chartKey === 'stock-health') {
+        renderDonut('chart-stock-health', 'legend-stock-health', data, {
+            centerLabel: 'TOTAL',
+            onSliceClick: onSlice,
+        });
+    } else if (chartKey === 'category') {
+        renderDonut('chart-category', 'legend-category', data, {
+            centerLabel: 'TOTAL',
+            onSliceClick: onSlice,
+        });
+    } else if (chartKey === 'value') {
+        const totalR = data.reduce((s, d) => s + d.value, 0);
+        renderDonut('chart-value', 'legend-value', data, {
+            centerLabel: 'STOCK VALUE',
+            centerValue: formatR(totalR),
+            isValue: true,
+            onSliceClick: onSlice,
+        });
+    } else if (chartKey === 'shape') {
+        renderHBars('chart-shape', data, {
+            padLeft: 160,
+            onBarClick: onSlice,
+        });
+    }
+}
+
+function renderChartL1(chartKey) {
+    const state = drill[chartKey];
+    const svg = document.getElementById('chart-' + chartKey);
+    const list = document.getElementById('list-' + chartKey);
+    const legend = document.getElementById('legend-' + chartKey);
+    if (svg) svg.style.display = 'none';
+    if (list) list.style.display = 'grid';
+    if (legend) legend.style.display = 'none';
+
+    const filterFn = CHART_FILTERS[chartKey];
+    let items = MATERIALS.filter(m => filterFn(m, state.filter));
+    if (chartKey === 'value') {
+        items = items.slice().sort((a, b) => b.stock_value - a.stock_value);
+    } else {
+        items = items.slice().sort((a, b) => a.name.localeCompare(b.name));
+    }
+    renderChartCards(list, items, { showValue: true });
+}
+
+function renderMainChart(chartKey) {
+    renderChartCrumbs(chartKey);
+    if (drill[chartKey].level === 0) {
+        renderChartL0(chartKey);
+    } else {
+        renderChartL1(chartKey);
+    }
+}
+
+function drillChart(chartKey, label) {
+    drill[chartKey].level = 1;
+    drill[chartKey].filter = label;
+    renderMainChart(chartKey);
+    // Also push the filter to the global table
+    const type = CHART_FILTER_TYPES[chartKey];
+    setFilter(type, label, `${CHART_TITLES[chartKey]}: ${label}`);
+}
+
+function resetChart(chartKey) {
+    drill[chartKey].level = 0;
+    drill[chartKey].filter = null;
+    renderMainChart(chartKey);
+    // Clear the filter only if the table was filtered by this chart
+    if (activeFilter && activeFilter.type === CHART_FILTER_TYPES[chartKey]) {
+        clearFilter();
+    }
+}
+
 // ----- Filter pill -------------------------------------------------------
 function setFilter(type, value, label) {
     activeFilter = { type: type, value: value, label: label };
@@ -873,25 +1069,34 @@ function clearFilter() {
     renderTable();
 }
 document.getElementById('filter-pill-clear').addEventListener('click', () => {
-    // Also reset bead drill if it was driving the filter
+    // Also reset whichever drill state was driving the filter
     if (activeFilter && activeFilter.type === 'bead_path') {
         beadDrill = { level: 0, path: [] };
         renderBeadChart();
+    } else {
+        // Reset any main chart that was drilled in
+        Object.keys(drill).forEach(k => {
+            if (drill[k].level !== 0) {
+                drill[k].level = 0;
+                drill[k].filter = null;
+                renderMainChart(k);
+            }
+        });
     }
     clearFilter();
 });
 
-// "View all" — click on chart header
+// Chart header click — resets that chart's drill state.
 document.querySelectorAll('[data-chart-view]').forEach(el => {
     el.addEventListener('click', (ev) => {
         const view = el.dataset.chartView;
         if (view === 'beads_all') {
             beadDrill = { level: 0, path: [] };
             renderBeadChart();
-            // table: show only beads
-            setFilter('beads_only', true, 'Beads only');
+            clearFilter();
+        } else if (drill[view]) {
+            resetChart(view);
         } else {
-            // For category-style headers, show everything (no filter)
             clearFilter();
         }
     });
@@ -962,22 +1167,7 @@ function renderTable() {
 document.getElementById('search-input').addEventListener('input', renderTable);
 
 // ----- Initial render ---------------------------------------------------
-renderDonut('chart-stock-health', 'legend-stock-health', STOCK_HEALTH, {
-    centerLabel: 'TOTAL',
-    onSliceClick: (label) => setFilter('stock_status', label, `Status: ${label}`),
-});
-renderDonut('chart-category', 'legend-category', CATEGORY, {
-    centerLabel: 'TOTAL',
-    onSliceClick: (label) => setFilter('category', label, `Category: ${label}`),
-});
-renderHBars('chart-shape', SHAPE, {
-    padLeft: 160,
-    onBarClick: (label) => setFilter('shape', label, `Shape: ${label}`),
-});
-renderVBars('chart-size', SIZE, {
-    color: PALETTE[0],
-    onBarClick: (label) => setFilter('size_band', label, `Size: ${label}`),
-});
+['stock-health', 'category', 'value', 'shape'].forEach(renderMainChart);
 renderBeadChart();
 renderTable();
 

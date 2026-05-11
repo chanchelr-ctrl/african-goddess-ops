@@ -797,11 +797,14 @@ def data_index(request):
         {"label": k, "value": v} for k, v in shape_counter.most_common(10)
     ]
 
-    size_order = ["4 mm", "6 mm", "8 mm", "10 mm", "12 mm", "12 mm+", "n/a"]
-    size_counter = Counter(e["size_band"] for e in enriched)
-    size_data = [
-        {"label": s, "value": size_counter.get(s, 0)}
-        for s in size_order if size_counter.get(s, 0) > 0
+    # Stock value (ZAR) by material category — replaces the old size-band chart
+    value_by_cat: dict = {}
+    for e in enriched:
+        value_by_cat[e["category"]] = value_by_cat.get(e["category"], 0) + e["stock_value"]
+    value_data = [
+        {"label": k, "value": round(v)}
+        for k, v in sorted(value_by_cat.items(), key=lambda x: -x[1])
+        if v > 0
     ]
 
     counts = {
@@ -820,7 +823,7 @@ def data_index(request):
         "stock_health_data": stock_health_data,
         "category_data":     category_data,
         "shape_data":        shape_data,
-        "size_data":         size_data,
+        "value_data":        value_data,
         "recent_changes":    DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50],
         "counts":            counts,
     })
