@@ -186,28 +186,51 @@ def build_index(request):
 
 @login_required
 def build_check(request):
-    """Sufficiency check for a (variant, qty) pair. Returns shortfall list."""
+    """Sufficiency check for a (variant, qty) pair. Returns the full BOM
+    with need vs. have per material, plus a shortfall summary."""
     sku = request.GET.get("variant") or request.POST.get("variant")
     try:
         qty = int(request.GET.get("qty") or request.POST.get("qty") or "1")
     except ValueError:
         qty = 1
 
-    pv = get_object_or_404(ProductVariant, sku=sku) if sku else None
+    pv = None
+    if sku:
+        pv = ProductVariant.objects.filter(sku=sku).first()
+
     shortfalls = []
+    bom_lines = []
     if pv and qty > 0:
         shortfalls = pv.material_shortfalls(qty)
+        for line in pv.bom_lines.select_related("raw_material").order_by("raw_material__name"):
+            need = line.quantity * qty
+            have = line.raw_material.current_stock
+            bom_lines.append({
+                "material": line.raw_material,
+                "qty_per_unit": line.quantity,
+                "need": need,
+                "have": have,
+                "short": max(need - have, 0),
+                "sufficient": have >= need,
+            })
 
     variants = ProductVariant.objects.filter(is_active=True).select_related(
         "product", "variant", "product__brand"
     ).order_by("product__brand", "product", "variant")
+
+    # Pre-fill project name suggestion (operator can override)
+    default_name = ""
+    if pv and qty > 0:
+        default_name = f"{qty} × {pv.product.name} — {pv.variant.name}"
 
     return render(request, "inventory/build_check.html", {
         "variants": variants,
         "selected_pv": pv,
         "qty": qty,
         "shortfalls": shortfalls,
+        "bom_lines": bom_lines,
         "is_sufficient": pv is not None and qty > 0 and not shortfalls,
+        "default_project_name": default_name,
     })
 
 
