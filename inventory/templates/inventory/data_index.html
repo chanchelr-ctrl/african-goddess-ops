@@ -1,125 +1,986 @@
 {% extends "inventory/base.html" %}
-{% block title %}Data — African Goddess Operations{% endblock %}
+{% block title %}Data — Inventory Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ==========================================================
+       Inventory BI dashboard
+       ========================================================== */
+
+    .bi-hero h1 {
+        font-family: Georgia, serif; font-weight: 500; letter-spacing: 0.4px;
+        margin: 1rem 0 0.35rem; font-size: 2rem;
+    }
+    .bi-hero p { color: var(--text-muted); font-style: italic; margin: 0 0 1.5rem; }
+
+    /* Chart grid */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .chart-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.25rem 1.4rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        transition: box-shadow .2s ease, border-color .2s ease;
+    }
+    .chart-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-50); }
+    .chart-card.col-4  { grid-column: span 4; }
+    .chart-card.col-6  { grid-column: span 6; }
+    .chart-card.col-8  { grid-column: span 8; }
+    .chart-card.col-12 { grid-column: span 12; }
+    .chart-card-header {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-bottom: 0.6rem; cursor: pointer; user-select: none;
+    }
+    .chart-card-header h3 {
+        font-family: Georgia, serif; font-size: 0.95rem; font-weight: 600;
+        letter-spacing: 0.3px; margin: 0; color: var(--text);
+    }
+    .chart-card-header .meta {
+        font-size: 0.74rem; color: var(--text-muted);
+        text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .chart-card-header:hover h3 { color: var(--primary); }
+    .chart-svg { width: 100%; display: block; overflow: visible; }
+
+    /* Donut chart styles */
+    .donut-slice {
+        cursor: pointer;
+        transition: opacity .2s ease, transform .25s cubic-bezier(.2,.8,.2,1);
+        transform-origin: center; transform-box: fill-box;
+    }
+    .donut-slice:hover { opacity: 0.82; transform: scale(1.04); }
+    .donut-legend {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.8rem;
+        margin-top: 0.8rem;
+    }
+    .legend-item {
+        display: flex; align-items: center; gap: 0.5rem;
+        font-size: 0.78rem; cursor: pointer;
+        padding: 0.2rem 0.4rem; border-radius: 4px;
+        transition: background .15s ease;
+    }
+    .legend-item:hover { background: var(--surface-2); }
+    .legend-swatch {
+        width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    .legend-label { color: var(--text); }
+    .legend-value {
+        margin-left: auto; color: var(--text-muted); font-weight: 600;
+    }
+
+    /* Bar chart styles */
+    .bar {
+        cursor: pointer;
+        transition: opacity .2s ease, fill .2s ease;
+    }
+    .bar:hover { opacity: 0.85; }
+    .bar-label {
+        font-family: system-ui, sans-serif; font-size: 9.5px;
+        fill: var(--text-muted);
+    }
+    .bar-value {
+        font-family: Georgia, serif; font-size: 11px; font-weight: 600;
+        fill: var(--text);
+    }
+    .axis-line {
+        stroke: var(--border); stroke-width: 0.6;
+    }
+
+    /* Bead analysis (drill-down) */
+    .bead-breadcrumb {
+        display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem;
+        margin: 0.4rem 0 1rem; font-size: 0.82rem;
+    }
+    .bead-crumb {
+        background: var(--surface-2); padding: 4px 10px;
+        border-radius: 4px; cursor: pointer;
+        color: var(--text);
+        transition: background .15s ease;
+    }
+    .bead-crumb:hover { background: var(--primary-50); color: var(--primary); }
+    .bead-crumb.current { background: var(--primary); color: var(--surface); cursor: default; }
+    .bead-crumb-sep { color: var(--text-muted); font-size: 0.75rem; }
+    .bead-meta {
+        margin-left: auto; color: var(--text-muted); font-size: 0.78rem;
+    }
+    .bead-detail-list {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.7rem;
+    }
+    .bead-detail-card {
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 8px; padding: 0.75rem 0.9rem;
+        cursor: pointer; transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .bead-detail-card:hover {
+        transform: translateY(-2px); box-shadow: var(--shadow-md);
+    }
+    .bead-detail-card .sku {
+        font-family: "SF Mono", Consolas, monospace; font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+    .bead-detail-card .name {
+        font-size: 0.85rem; font-weight: 600; margin: 3px 0 6px; line-height: 1.3;
+    }
+    .bead-detail-card .stats {
+        display: flex; justify-content: space-between; font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    /* Filter pill + search row */
+    .table-controls {
+        display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .filter-pill {
+        display: none; align-items: center; gap: 0.5rem;
+        background: var(--gold); color: white;
+        padding: 6px 10px 6px 14px; border-radius: 999px;
+        font-size: 0.82rem; font-weight: 500;
+    }
+    .filter-pill.active { display: inline-flex; }
+    .filter-pill-clear {
+        background: rgba(255,255,255,0.25);
+        border: none; color: white;
+        width: 20px; height: 20px; border-radius: 50%;
+        cursor: pointer; font-size: 0.9rem; line-height: 1;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .filter-pill-clear:hover { background: rgba(255,255,255,0.4); }
+
+    .search-wrap {
+        flex: 1 1 280px; max-width: 460px; position: relative;
+    }
+    .search-wrap input {
+        width: 100%; max-width: 100%;
+        padding: 0.6rem 0.9rem 0.6rem 2.2rem;
+        border: 1px solid var(--border); border-radius: 8px;
+        font-size: 0.92rem;
+    }
+    .search-wrap::before {
+        content: "🔍"; position: absolute;
+        left: 0.75rem; top: 50%; transform: translateY(-50%);
+        opacity: 0.5; font-size: 0.85rem;
+    }
+
+    .table-meta {
+        margin-left: auto; font-size: 0.82rem; color: var(--text-muted);
+    }
+
+    /* Data table */
+    .data-table-wrap {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 12px; box-shadow: var(--shadow-sm);
+        overflow: hidden; margin-bottom: 2rem;
+    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table thead th {
+        background: var(--surface-2);
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+        font-weight: 600; color: var(--text-muted);
+        padding: 0.7rem 0.85rem; text-align: left;
+        border-bottom: 1px solid var(--border);
+        position: sticky; top: 0;
+    }
+    .data-table thead th.num { text-align: right; }
+    .data-table tbody td {
+        padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border);
+    }
+    .data-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .data-table tbody tr:hover { background: var(--surface-2); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr.hidden { display: none; }
+    .data-table .swatch {
+        display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+        border: 1px solid var(--border); margin-right: 6px; vertical-align: middle;
+    }
+    .data-table .stock-pill {
+        padding: 2px 8px; border-radius: 999px; font-size: 0.68rem;
+        font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .data-table .stock-pill.ok  { background: var(--success-bg); color: var(--success); }
+    .data-table .stock-pill.low { background: #fcf2d8; color: #6b4f0a; }
+    .data-table .stock-pill.out { background: var(--alert-bg); color: var(--alert); }
+    .data-empty {
+        padding: 2.5rem 1rem; text-align: center; color: var(--text-muted);
+        font-style: italic;
+    }
+
+    /* Bottom panel for Import/Export + change log */
+    .bottom-panel {
+        margin-top: 3rem; padding-top: 2rem;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Custom tooltip overlay */
+    .chart-tooltip {
+        position: absolute; pointer-events: none;
+        background: var(--primary); color: var(--surface);
+        padding: 6px 10px; border-radius: 4px;
+        font-size: 0.78rem; line-height: 1.3;
+        white-space: nowrap; opacity: 0;
+        transition: opacity .12s ease;
+        box-shadow: var(--shadow-md);
+        z-index: 50;
+    }
+    .chart-tooltip.visible { opacity: 1; }
+    .chart-tooltip strong { font-weight: 600; }
+
+    @media (max-width: 900px) {
+        .chart-card.col-4, .chart-card.col-6, .chart-card.col-8 { grid-column: span 12; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .donut-slice, .bar, .bead-detail-card, .legend-item { transition: none !important; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 {% with active="data" %}{% endwith %}
 
-<h1 style="font-family:Georgia, serif; font-weight:500; letter-spacing:0.5px;">Data — Export & Import</h1>
-<p style="color:var(--text-muted); margin-top:0; font-style:italic;">
-    The canonical master workbook contains every raw material, every product spec line, and the full change history.
-    Generated fresh from the live database every time you click Export.
-</p>
-
-<div class="kpi-grid">
-    <div class="kpi">
-        <div class="kpi-icon">∞</div>
-        <div class="kpi-value">{{ counts.materials }}</div>
-        <div class="kpi-label">Raw materials ({{ counts.active_materials }} active)</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">★</div>
-        <div class="kpi-value">{{ counts.product_variants }}</div>
-        <div class="kpi-label">Sellable SKUs</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">≡</div>
-        <div class="kpi-value">{{ counts.bom_lines }}</div>
-        <div class="kpi-label">BOM spec lines</div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-icon">⌛</div>
-        <div class="kpi-value">{{ counts.change_log_entries }}</div>
-        <div class="kpi-label">Change-log entries</div>
-    </div>
+<div class="bi-hero">
+    <h1>Inventory Analytics</h1>
+    <p>Five views of your raw-material catalogue. Click anything to drill into the table below.</p>
 </div>
 
-<section class="card">
-    <div class="card-header">
-        <h2>Export data</h2>
-    </div>
-    <div class="card-body padded">
-        <p style="margin-top:0;">Download a fresh <strong>MasterData_*.xlsx</strong> with three sheets:</p>
-        <ul style="margin-top:0;">
-            <li><strong>MaterialMaster</strong> — every raw material, with current stock and ZAR value of stock on hand.</li>
-            <li><strong>ProductSpec</strong> — the full BOM. One row per (sellable SKU × material) line with quantity.</li>
-            <li><strong>ChangeLog</strong> — every recorded change to master/spec data, with timestamp and user.</li>
-        </ul>
-        <p>The .xlsx is generated on demand. Open it, edit it, share it — the file is yours. The app does not write to it after download.</p>
-        <div class="form-actions">
-            <a href="/data/export/" class="btn">⬇  Download MasterData.xlsx</a>
+{# ============== JSON data dumps for client-side rendering ============== #}
+{{ materials_json|json_script:"materials-data" }}
+{{ stock_health_json|json_script:"stock-health-data" }}
+{{ category_json|json_script:"category-data" }}
+{{ shape_json|json_script:"shape-data" }}
+{{ size_json|json_script:"size-data" }}
+
+{# ============== Chart grid ============== #}
+<div class="chart-grid">
+
+    {# 1: Stock health donut #}
+    <div class="chart-card col-4">
+        <div class="chart-card-header" data-chart-view="stock_status">
+            <h3>Stock health</h3>
+            <span class="meta">click chart to view all</span>
         </div>
+        <svg class="chart-svg" id="chart-stock-health" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="donut-legend" id="legend-stock-health"></div>
     </div>
-</section>
 
-<section class="card">
-    <div class="card-header">
-        <h2>Import data</h2>
+    {# 2: Material category donut #}
+    <div class="chart-card col-4">
+        <div class="chart-card-header" data-chart-view="category">
+            <h3>By material category</h3>
+            <span class="meta">click slice to filter</span>
+        </div>
+        <svg class="chart-svg" id="chart-category" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="donut-legend" id="legend-category"></div>
     </div>
-    <div class="card-body padded">
-        <p style="margin-top:0;">
-            Upload a <strong>MasterData_*.xlsx</strong> to apply changes back to the database.
-            Materials are matched by <code>SKU</code>; BOM lines by <code>(PV SKU, Material SKU)</code>.
-        </p>
-        <p style="font-size:0.88rem; color:var(--text-muted);">
-            <strong>Default behaviour:</strong> additive — rows in the file are upserted, anything in the DB but not in the file is left alone.
-            Tick <em>Prune</em> if you want missing rows to be removed too.
-        </p>
-        <form method="post" action="/data/import/" enctype="multipart/form-data" style="margin-top:1rem;">
-            {% csrf_token %}
-            <div class="form-row">
-                <label for="file">Master data file (.xlsx)</label>
-                <input type="file" name="file" id="file" accept=".xlsx" required>
-            </div>
-            <div class="form-row">
-                <label style="display:inline-flex; align-items:center; gap:0.5rem; font-weight:400; text-transform:none; letter-spacing:0; color:var(--text);">
-                    <input type="checkbox" name="prune" style="width:auto;"> Prune missing rows (deactivate materials, delete BOM lines not in file)
-                </label>
-            </div>
+
+    {# 4: Size band bars #}
+    <div class="chart-card col-4">
+        <div class="chart-card-header" data-chart-view="size_band">
+            <h3>By size band</h3>
+            <span class="meta">click bar to filter</span>
+        </div>
+        <svg class="chart-svg" id="chart-size" viewBox="0 0 340 220" aria-hidden="true"></svg>
+    </div>
+
+    {# 3: Shape horizontal bars (top 10) #}
+    <div class="chart-card col-6">
+        <div class="chart-card-header" data-chart-view="shape">
+            <h3>By shape — top 10</h3>
+            <span class="meta">click bar to filter</span>
+        </div>
+        <svg class="chart-svg" id="chart-shape" viewBox="0 0 480 260" aria-hidden="true"></svg>
+    </div>
+
+    {# 5: Bead Analysis drill-down (the feature chart) #}
+    <div class="chart-card col-6">
+        <div class="chart-card-header" data-chart-view="beads_all">
+            <h3>Bead analysis — drill down</h3>
+            <span class="meta">click any bar/slice to go deeper</span>
+        </div>
+        <div class="bead-breadcrumb" id="bead-crumbs"></div>
+        <svg class="chart-svg" id="chart-beads" viewBox="0 0 480 260" aria-hidden="true"></svg>
+        <div id="bead-detail-list" class="bead-detail-list" style="display:none;"></div>
+    </div>
+
+</div>
+
+{# ============== Filter + Search + Table ============== #}
+<div class="table-controls">
+    <div class="filter-pill" id="filter-pill">
+        <span id="filter-pill-text"></span>
+        <button type="button" class="filter-pill-clear" id="filter-pill-clear" title="Clear filter">×</button>
+    </div>
+    <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search materials by SKU, name, colour, shape, supplier…"
+               autocomplete="off">
+    </div>
+    <span class="table-meta" id="table-meta">81 materials</span>
+</div>
+
+<div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Material</th>
+                <th>Size</th>
+                <th>Colour</th>
+                <th>Shape</th>
+                <th>Supplier</th>
+                <th class="num">Stock</th>
+                <th class="num">Reorder</th>
+                <th class="num">Unit cost</th>
+                <th class="num">Stock value</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+    </table>
+    <div class="data-empty" id="data-empty" style="display:none;">No materials match the current filter or search.</div>
+</div>
+
+{# ============== Bottom: Import / Export + Change log ============== #}
+<div class="bottom-panel">
+
+    <h2 style="font-family:Georgia,serif; font-weight:500; letter-spacing:0.3px; margin: 0 0 0.6rem;">Data exchange</h2>
+    <p style="color:var(--text-muted); font-size:0.92rem; margin: 0 0 1.5rem;">
+        Generate a snapshot of the master data or apply an edited file back to the database.
+    </p>
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Export data</h2>
+        </div>
+        <div class="card-body padded">
+            <p style="margin-top:0;">Download a fresh <strong>MasterData_*.xlsx</strong> with three sheets: <strong>MaterialMaster</strong>, <strong>ProductSpec</strong>, <strong>ChangeLog</strong>. Generated on demand from the live DB.</p>
             <div class="form-actions">
-                <button type="submit" class="btn">⬆  Apply file to database</button>
+                <a href="/data/export/" class="btn">⬇  Download MasterData.xlsx</a>
             </div>
-        </form>
-    </div>
-</section>
+        </div>
+    </section>
 
-<section class="card">
-    <div class="card-header">
-        <h2>Recent changes (latest 50)</h2>
-        <span class="meta">From the change log</span>
-    </div>
-    <div class="card-body">
-        {% if recent_changes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>When</th>
-                    <th>Who</th>
-                    <th>Action</th>
-                    <th>Object</th>
-                    <th>Field</th>
-                    <th>Old</th>
-                    <th>New</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in recent_changes %}
-                <tr>
-                    <td style="white-space:nowrap;">{{ c.timestamp|date:"Y-m-d H:i" }}</td>
-                    <td>{% if c.user %}{{ c.user.username }}{% else %}<em style="color:var(--text-muted);">system</em>{% endif %}</td>
-                    <td>
-                        <span class="pill {% if c.action == 'CREATE' %}pill-success{% elif c.action == 'DELETE' %}pill-reorder{% endif %}">{{ c.action }}</span>
-                    </td>
-                    <td><code>{{ c.model_name }}</code> · {{ c.sku|default:c.object_pk }}</td>
-                    <td>{{ c.field|default:"—" }}</td>
-                    <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.old_value|truncatechars:60 }}</td>
-                    <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.new_value|truncatechars:60 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">No changes recorded yet. Edit a material, BOM line, product, or supplier and it will appear here.</div>
-        {% endif %}
-    </div>
-</section>
+    <section class="card">
+        <div class="card-header">
+            <h2>Import data</h2>
+        </div>
+        <div class="card-body padded">
+            <p style="margin-top:0;">
+                Upload a <strong>MasterData_*.xlsx</strong> to apply changes back to the database.
+                Materials are matched by <code>SKU</code>; BOM lines by <code>(PV SKU, Material SKU)</code>.
+            </p>
+            <p style="font-size:0.88rem; color:var(--text-muted);">
+                <strong>Default:</strong> additive — anything in the DB but not in the file is left alone.
+                Tick <em>Prune</em> to remove missing rows too.
+            </p>
+            <form method="post" action="/data/import/" enctype="multipart/form-data" style="margin-top:1rem;">
+                {% csrf_token %}
+                <div class="form-row">
+                    <label for="file">Master data file (.xlsx)</label>
+                    <input type="file" name="file" id="file" accept=".xlsx" required>
+                </div>
+                <div class="form-row">
+                    <label style="display:inline-flex; align-items:center; gap:0.5rem; font-weight:400; text-transform:none; letter-spacing:0; color:var(--text);">
+                        <input type="checkbox" name="prune" style="width:auto;"> Prune missing rows (deactivate materials, delete BOM lines not in file)
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">⬆  Apply file to database</button>
+                </div>
+            </form>
+        </div>
+    </section>
 
+    <section class="card">
+        <div class="card-header">
+            <h2>Recent changes (latest 50)</h2>
+            <span class="meta">From the change log</span>
+        </div>
+        <div class="card-body">
+            {% if recent_changes %}
+            <table>
+                <thead>
+                    <tr><th>When</th><th>Who</th><th>Action</th><th>Object</th><th>Field</th><th>Old</th><th>New</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in recent_changes %}
+                    <tr>
+                        <td style="white-space:nowrap;">{{ c.timestamp|date:"Y-m-d H:i" }}</td>
+                        <td>{% if c.user %}{{ c.user.username }}{% else %}<em style="color:var(--text-muted);">system</em>{% endif %}</td>
+                        <td><span class="pill {% if c.action == 'CREATE' %}pill-success{% elif c.action == 'DELETE' %}pill-reorder{% endif %}">{{ c.action }}</span></td>
+                        <td><code>{{ c.model_name }}</code> · {{ c.sku|default:c.object_pk }}</td>
+                        <td>{{ c.field|default:"—" }}</td>
+                        <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.old_value|truncatechars:60 }}</td>
+                        <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ c.new_value|truncatechars:60 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No changes recorded yet.</div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+{# ============== Custom tooltip ============== #}
+<div class="chart-tooltip" id="chart-tooltip"></div>
+
+{# ============== JavaScript ============== #}
+<script>
+(function() {
+'use strict';
+
+// ----- Data ---------------------------------------------------------------
+const MATERIALS    = JSON.parse(document.getElementById('materials-data').textContent);
+const STOCK_HEALTH = JSON.parse(document.getElementById('stock-health-data').textContent);
+const CATEGORY     = JSON.parse(document.getElementById('category-data').textContent);
+const SHAPE        = JSON.parse(document.getElementById('shape-data').textContent);
+const SIZE         = JSON.parse(document.getElementById('size-data').textContent);
+
+// ----- Brand palette (matches Studio Neutral CSS vars) -------------------
+const PALETTE = [
+    '#b0794a', // copper (gold var)
+    '#2a2a28', // graphite (primary)
+    '#5e7a5b', // sage
+    '#7a3a3a', // burgundy
+    '#2c3e60', // indigo
+    '#c89759', // amber
+    '#6e3e6e', // plum
+    '#4d7a4d', // forest
+    '#b87c6b', // dusty rose
+    '#7a9572', // mint
+    '#8a5d39', // brown
+    '#a8392a', // wax red
+];
+
+// Map a category label to a stable palette colour
+function colourFor(label, palette) {
+    palette = palette || PALETTE;
+    // Stable hash to index
+    let h = 0;
+    for (let i = 0; i < label.length; i++) {
+        h = (h * 31 + label.charCodeAt(i)) >>> 0;
+    }
+    return palette[h % palette.length];
+}
+
+// Small swatch colour for colour-family slices (uses an indicative tint)
+const COLOUR_FAMILY_SWATCH = {
+    'Oranges':         '#d68a4a',
+    'Reds & Pinks':    '#b04848',
+    'Yellows & Golds': '#c89759',
+    'Whites & Creams': '#e8d9bf',
+    'Greens':          '#5e7a5b',
+    'Blues':           '#3e7e8c',
+    'Purples':         '#6e3e6e',
+    'Browns & Earths': '#8a5d39',
+    'Greys & Steels':  '#7a7570',
+    'Blacks':          '#2a2a28',
+    'Multi / AB':      '#b87c6b',
+    'Other':           '#a89a82',
+};
+
+// ----- State --------------------------------------------------------------
+let activeFilter = null;  // null or { type, value, label }
+let beadDrill = { level: 0, path: [] };  // path = [bead_cat?, colour_family?, size_band?]
+
+// ----- SVG geometry helpers ----------------------------------------------
+function polarToCartesian(cx, cy, r, angleRad) {
+    return { x: cx + r * Math.sin(angleRad), y: cy - r * Math.cos(angleRad) };
+}
+function arcPath(cx, cy, rOuter, rInner, startAngle, endAngle) {
+    const p1 = polarToCartesian(cx, cy, rOuter, startAngle);
+    const p2 = polarToCartesian(cx, cy, rOuter, endAngle);
+    const p3 = polarToCartesian(cx, cy, rInner, endAngle);
+    const p4 = polarToCartesian(cx, cy, rInner, startAngle);
+    const largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+    return `M ${p1.x} ${p1.y}
+            A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${p2.x} ${p2.y}
+            L ${p3.x} ${p3.y}
+            A ${rInner} ${rInner} 0 ${largeArc} 0 ${p4.x} ${p4.y}
+            Z`;
+}
+
+// ----- Tooltip ------------------------------------------------------------
+const tooltipEl = document.getElementById('chart-tooltip');
+function showTooltip(html, ev) {
+    tooltipEl.innerHTML = html;
+    tooltipEl.classList.add('visible');
+    moveTooltip(ev);
+}
+function moveTooltip(ev) {
+    const margin = 14;
+    tooltipEl.style.left = (ev.pageX + margin) + 'px';
+    tooltipEl.style.top  = (ev.pageY - tooltipEl.offsetHeight - 6) + 'px';
+}
+function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+// ----- Donut renderer ----------------------------------------------------
+function renderDonut(svgId, legendId, data, opts) {
+    opts = opts || {};
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = '';
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const cx = 100, cy = 100, rO = 78, rI = 50;
+
+    if (total === 0) {
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', cx); txt.setAttribute('y', cy);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('fill', 'var(--text-muted)');
+        txt.setAttribute('font-size', '12');
+        txt.textContent = 'no data';
+        svg.appendChild(txt);
+        if (legendId) document.getElementById(legendId).innerHTML = '';
+        return;
+    }
+
+    let angle = 0;
+    data.forEach((d, i) => {
+        if (d.value <= 0) return;
+        const sweep = (d.value / total) * 2 * Math.PI;
+        const slice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        slice.setAttribute('d', arcPath(cx, cy, rO, rI, angle, angle + sweep));
+        const fill = d.color || colourFor(d.label);
+        slice.setAttribute('fill', fill);
+        slice.setAttribute('class', 'donut-slice');
+        slice.dataset.label = d.label;
+        slice.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            opts.onSliceClick && opts.onSliceClick(d.label);
+        });
+        slice.addEventListener('mousemove', (ev) => {
+            const pct = ((d.value / total) * 100).toFixed(0);
+            showTooltip(`<strong>${d.label}</strong><br>${d.value} materials · ${pct}%`, ev);
+        });
+        slice.addEventListener('mouseleave', hideTooltip);
+        svg.appendChild(slice);
+        angle += sweep;
+    });
+
+    // Centre total label
+    const totalText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    totalText.setAttribute('x', cx); totalText.setAttribute('y', cy - 4);
+    totalText.setAttribute('text-anchor', 'middle');
+    totalText.setAttribute('font-family', 'Georgia, serif');
+    totalText.setAttribute('font-size', '24');
+    totalText.setAttribute('font-weight', '600');
+    totalText.setAttribute('fill', 'var(--text)');
+    totalText.textContent = total;
+    svg.appendChild(totalText);
+    const totalLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    totalLabel.setAttribute('x', cx); totalLabel.setAttribute('y', cy + 13);
+    totalLabel.setAttribute('text-anchor', 'middle');
+    totalLabel.setAttribute('font-family', 'system-ui, sans-serif');
+    totalLabel.setAttribute('font-size', '9.5');
+    totalLabel.setAttribute('font-weight', '600');
+    totalLabel.setAttribute('letter-spacing', '0.5');
+    totalLabel.setAttribute('text-transform', 'uppercase');
+    totalLabel.setAttribute('fill', 'var(--text-muted)');
+    totalLabel.textContent = (opts.centerLabel || 'TOTAL');
+    svg.appendChild(totalLabel);
+
+    // Legend
+    if (legendId) {
+        const legend = document.getElementById(legendId);
+        legend.innerHTML = '';
+        data.forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            const fill = d.color || colourFor(d.label);
+            item.innerHTML = `
+                <span class="legend-swatch" style="background:${fill};"></span>
+                <span class="legend-label">${d.label}</span>
+                <span class="legend-value">${d.value}</span>`;
+            item.addEventListener('click', () => opts.onSliceClick && opts.onSliceClick(d.label));
+            legend.appendChild(item);
+        });
+    }
+}
+
+// ----- Horizontal bar chart ---------------------------------------------
+function renderHBars(svgId, data, opts) {
+    opts = opts || {};
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = '';
+    if (data.length === 0) return;
+
+    const padLeft = opts.padLeft || 140;
+    const padRight = 50;
+    const padTop = 8;
+    const padBot = 8;
+    const vbWidth = 480;
+    const vbHeight = Math.max(180, data.length * 26 + padTop + padBot);
+    svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
+
+    const max = Math.max.apply(null, data.map(d => d.value));
+    const chartWidth = vbWidth - padLeft - padRight;
+    const rowHeight = (vbHeight - padTop - padBot) / data.length;
+    const barHeight = Math.min(20, rowHeight - 6);
+
+    data.forEach((d, i) => {
+        const y = padTop + i * rowHeight + (rowHeight - barHeight) / 2;
+        const w = (d.value / max) * chartWidth;
+
+        // Label (left)
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', padLeft - 8);
+        label.setAttribute('y', y + barHeight / 2 + 3.5);
+        label.setAttribute('text-anchor', 'end');
+        label.setAttribute('class', 'bar-label');
+        label.textContent = d.label.length > 22 ? d.label.slice(0, 20) + '…' : d.label;
+        svg.appendChild(label);
+
+        // Bar
+        const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bar.setAttribute('x', padLeft);
+        bar.setAttribute('y', y);
+        bar.setAttribute('width', Math.max(1, w));
+        bar.setAttribute('height', barHeight);
+        bar.setAttribute('rx', 3);
+        bar.setAttribute('fill', opts.color || colourFor(d.label));
+        bar.setAttribute('class', 'bar');
+        bar.addEventListener('click', () => opts.onBarClick && opts.onBarClick(d.label));
+        bar.addEventListener('mousemove', (ev) => showTooltip(`<strong>${d.label}</strong><br>${d.value} materials`, ev));
+        bar.addEventListener('mouseleave', hideTooltip);
+        svg.appendChild(bar);
+
+        // Value
+        const val = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        val.setAttribute('x', padLeft + w + 6);
+        val.setAttribute('y', y + barHeight / 2 + 3.5);
+        val.setAttribute('class', 'bar-value');
+        val.textContent = d.value;
+        svg.appendChild(val);
+    });
+}
+
+// ----- Vertical bar chart -----------------------------------------------
+function renderVBars(svgId, data, opts) {
+    opts = opts || {};
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = '';
+    if (data.length === 0) return;
+
+    const padLeft = 24, padRight = 12, padTop = 16, padBot = 28;
+    const vbWidth = 340, vbHeight = 220;
+    svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
+
+    const max = Math.max.apply(null, data.map(d => d.value));
+    const chartHeight = vbHeight - padTop - padBot;
+    const colWidth = (vbWidth - padLeft - padRight) / data.length;
+    const barWidth = Math.min(36, colWidth - 12);
+
+    // Baseline
+    const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    axis.setAttribute('x1', padLeft); axis.setAttribute('x2', vbWidth - padRight);
+    axis.setAttribute('y1', vbHeight - padBot); axis.setAttribute('y2', vbHeight - padBot);
+    axis.setAttribute('class', 'axis-line');
+    svg.appendChild(axis);
+
+    data.forEach((d, i) => {
+        const h = (d.value / max) * chartHeight;
+        const x = padLeft + i * colWidth + (colWidth - barWidth) / 2;
+        const y = vbHeight - padBot - h;
+
+        const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bar.setAttribute('x', x);
+        bar.setAttribute('y', y);
+        bar.setAttribute('width', barWidth);
+        bar.setAttribute('height', Math.max(2, h));
+        bar.setAttribute('rx', 3);
+        bar.setAttribute('fill', opts.color || colourFor(d.label));
+        bar.setAttribute('class', 'bar');
+        bar.addEventListener('click', () => opts.onBarClick && opts.onBarClick(d.label));
+        bar.addEventListener('mousemove', (ev) => showTooltip(`<strong>${d.label}</strong><br>${d.value} materials`, ev));
+        bar.addEventListener('mouseleave', hideTooltip);
+        svg.appendChild(bar);
+
+        // Value
+        const val = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        val.setAttribute('x', x + barWidth / 2);
+        val.setAttribute('y', y - 5);
+        val.setAttribute('text-anchor', 'middle');
+        val.setAttribute('class', 'bar-value');
+        val.textContent = d.value;
+        svg.appendChild(val);
+
+        // Label
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', x + barWidth / 2);
+        label.setAttribute('y', vbHeight - padBot + 14);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('class', 'bar-label');
+        label.textContent = d.label;
+        svg.appendChild(label);
+    });
+}
+
+// ----- Bead analysis drill-down -----------------------------------------
+function aggregate(items, key) {
+    const counts = {};
+    items.forEach(m => {
+        const k = m[key] || 'Other';
+        counts[k] = (counts[k] || 0) + 1;
+    });
+    return Object.keys(counts)
+        .map(k => ({ label: k, value: counts[k] }))
+        .sort((a, b) => b.value - a.value);
+}
+
+function renderBeadChart() {
+    const beads = MATERIALS.filter(m => m.bead_category !== null);
+    let filtered = beads;
+    if (beadDrill.path[0]) filtered = filtered.filter(m => m.bead_category === beadDrill.path[0]);
+    if (beadDrill.path[1]) filtered = filtered.filter(m => m.colour_family === beadDrill.path[1]);
+    if (beadDrill.path[2]) filtered = filtered.filter(m => m.size_band === beadDrill.path[2]);
+
+    const svg = document.getElementById('chart-beads');
+    const list = document.getElementById('bead-detail-list');
+    svg.innerHTML = '';
+
+    renderBreadcrumbs(filtered.length);
+
+    // Show/hide SVG vs material list
+    if (beadDrill.level >= 3) {
+        svg.style.display = 'none';
+        list.style.display = 'grid';
+        list.innerHTML = '';
+        filtered.forEach(m => {
+            const card = document.createElement('div');
+            card.className = 'bead-detail-card';
+            card.innerHTML = `
+                <div class="sku">${m.sku.slice(0, 32)}${m.sku.length > 32 ? '…' : ''}</div>
+                <div class="name">${m.name.slice(0, 42)}${m.name.length > 42 ? '…' : ''}</div>
+                <div class="stats">
+                    <span>Stock: <strong>${m.current_stock}</strong></span>
+                    <span>R&nbsp;${Math.round(m.stock_value)}</span>
+                </div>`;
+            card.addEventListener('click', () => {
+                setFilter('sku', m.sku, `Material: ${m.sku}`);
+            });
+            list.appendChild(card);
+        });
+        return;
+    }
+
+    svg.style.display = 'block';
+    list.style.display = 'none';
+
+    if (beadDrill.level === 0) {
+        // Donut by bead_category
+        const data = aggregate(filtered, 'bead_category');
+        svg.setAttribute('viewBox', '0 0 200 200');
+        renderDonut('chart-beads', null, data, {
+            centerLabel: 'BEADS',
+            onSliceClick: (label) => drillBeads(label),
+        });
+    } else if (beadDrill.level === 1) {
+        // Horizontal bar by colour_family
+        const data = aggregate(filtered, 'colour_family').map(d => Object.assign({}, d, {
+            color: COLOUR_FAMILY_SWATCH[d.label] || '#a89a82'
+        }));
+        renderHBars('chart-beads', data, {
+            padLeft: 130,
+            onBarClick: (label) => drillBeads(label),
+        });
+    } else if (beadDrill.level === 2) {
+        // Vertical bar by size_band
+        const order = ['4 mm', '6 mm', '8 mm', '10 mm', '12 mm', '12 mm+', 'n/a'];
+        const raw = aggregate(filtered, 'size_band');
+        const data = order.map(s => ({
+            label: s,
+            value: (raw.find(r => r.label === s) || { value: 0 }).value
+        })).filter(d => d.value > 0);
+        renderVBars('chart-beads', data, {
+            color: PALETTE[0],
+            onBarClick: (label) => drillBeads(label),
+        });
+    }
+}
+
+function drillBeads(label) {
+    beadDrill.path[beadDrill.level] = label;
+    beadDrill.level++;
+    // Apply filter to table — combined path
+    let labelText = '';
+    if (beadDrill.path[0]) labelText += beadDrill.path[0];
+    if (beadDrill.path[1]) labelText += ' · ' + beadDrill.path[1];
+    if (beadDrill.path[2]) labelText += ' · ' + beadDrill.path[2];
+    setFilter('bead_path', beadDrill.path.slice(), 'Beads: ' + labelText);
+    renderBeadChart();
+}
+
+function renderBreadcrumbs(count) {
+    const el = document.getElementById('bead-crumbs');
+    const crumbs = [
+        { label: 'All beads', level: 0 }
+    ];
+    if (beadDrill.path[0]) crumbs.push({ label: beadDrill.path[0], level: 1 });
+    if (beadDrill.path[1]) crumbs.push({ label: beadDrill.path[1], level: 2 });
+    if (beadDrill.path[2]) crumbs.push({ label: beadDrill.path[2], level: 3 });
+
+    el.innerHTML = '';
+    crumbs.forEach((c, i) => {
+        if (i > 0) {
+            const sep = document.createElement('span');
+            sep.className = 'bead-crumb-sep';
+            sep.textContent = '›';
+            el.appendChild(sep);
+        }
+        const crumb = document.createElement('span');
+        crumb.className = 'bead-crumb' + (i === crumbs.length - 1 ? ' current' : '');
+        crumb.textContent = c.label;
+        crumb.addEventListener('click', () => {
+            beadDrill.level = c.level;
+            beadDrill.path = beadDrill.path.slice(0, c.level);
+            if (beadDrill.level === 0) clearFilter();
+            else {
+                let labelText = beadDrill.path.join(' · ');
+                setFilter('bead_path', beadDrill.path.slice(), 'Beads: ' + labelText);
+            }
+            renderBeadChart();
+        });
+        el.appendChild(crumb);
+    });
+
+    const meta = document.createElement('span');
+    meta.className = 'bead-meta';
+    meta.textContent = `(${count} materials)`;
+    el.appendChild(meta);
+}
+
+// ----- Filter pill -------------------------------------------------------
+function setFilter(type, value, label) {
+    activeFilter = { type: type, value: value, label: label };
+    document.getElementById('filter-pill-text').textContent = label;
+    document.getElementById('filter-pill').classList.add('active');
+    renderTable();
+}
+function clearFilter() {
+    activeFilter = null;
+    document.getElementById('filter-pill').classList.remove('active');
+    renderTable();
+}
+document.getElementById('filter-pill-clear').addEventListener('click', () => {
+    // Also reset bead drill if it was driving the filter
+    if (activeFilter && activeFilter.type === 'bead_path') {
+        beadDrill = { level: 0, path: [] };
+        renderBeadChart();
+    }
+    clearFilter();
+});
+
+// "View all" — click on chart header
+document.querySelectorAll('[data-chart-view]').forEach(el => {
+    el.addEventListener('click', (ev) => {
+        const view = el.dataset.chartView;
+        if (view === 'beads_all') {
+            beadDrill = { level: 0, path: [] };
+            renderBeadChart();
+            // table: show only beads
+            setFilter('beads_only', true, 'Beads only');
+        } else {
+            // For category-style headers, show everything (no filter)
+            clearFilter();
+        }
+    });
+});
+
+// ----- Table render ------------------------------------------------------
+function matchesFilter(m, f) {
+    if (!f) return true;
+    switch (f.type) {
+        case 'category':      return m.category === f.value;
+        case 'shape':         return (m.shape || 'Other') === f.value;
+        case 'size_band':     return m.size_band === f.value;
+        case 'stock_status':  return m.stock_status === f.value.toLowerCase();
+        case 'bead_path':
+            if (f.value[0] && m.bead_category !== f.value[0]) return false;
+            if (f.value[1] && m.colour_family !== f.value[1]) return false;
+            if (f.value[2] && m.size_band !== f.value[2]) return false;
+            return m.bead_category !== null;
+        case 'beads_only':    return m.bead_category !== null;
+        case 'sku':           return m.sku === f.value;
+        default:              return true;
+    }
+}
+
+function renderTable() {
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+    const tbody = document.getElementById('data-table-body');
+    const emptyEl = document.getElementById('data-empty');
+    const meta = document.getElementById('table-meta');
+
+    const filtered = MATERIALS.filter(m => {
+        if (!matchesFilter(m, activeFilter)) return false;
+        if (search) {
+            const hay = [m.sku, m.name, m.colour, m.shape, m.supplier, m.item_size]
+                .join(' ').toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    tbody.innerHTML = filtered.map(m => {
+        const colour = (COLOUR_FAMILY_SWATCH[m.colour_family] || '#cccccc');
+        const status = m.stock_status;
+        return `
+            <tr>
+                <td><code>${m.sku.length > 24 ? m.sku.slice(0,22) + '…' : m.sku}</code></td>
+                <td>${m.name}</td>
+                <td>${m.item_size}</td>
+                <td><span class="swatch" style="background:${colour}"></span>${m.colour}</td>
+                <td>${m.shape}</td>
+                <td>${m.supplier}</td>
+                <td class="num">${m.current_stock}</td>
+                <td class="num">${m.reorder_point}</td>
+                <td class="num">R&nbsp;${Math.round(m.unit_cost)}</td>
+                <td class="num">R&nbsp;${Math.round(m.stock_value)}</td>
+                <td><span class="stock-pill ${status}">${status.toUpperCase()}</span></td>
+            </tr>`;
+    }).join('');
+
+    if (filtered.length === 0) {
+        emptyEl.style.display = 'block';
+    } else {
+        emptyEl.style.display = 'none';
+    }
+    meta.textContent = `${filtered.length} of ${MATERIALS.length} materials`;
+}
+
+document.getElementById('search-input').addEventListener('input', renderTable);
+
+// ----- Initial render ---------------------------------------------------
+renderDonut('chart-stock-health', 'legend-stock-health', STOCK_HEALTH, {
+    centerLabel: 'TOTAL',
+    onSliceClick: (label) => setFilter('stock_status', label, `Status: ${label}`),
+});
+renderDonut('chart-category', 'legend-category', CATEGORY, {
+    centerLabel: 'TOTAL',
+    onSliceClick: (label) => setFilter('category', label, `Category: ${label}`),
+});
+renderHBars('chart-shape', SHAPE, {
+    padLeft: 160,
+    onBarClick: (label) => setFilter('shape', label, `Shape: ${label}`),
+});
+renderVBars('chart-size', SIZE, {
+    color: PALETTE[0],
+    onBarClick: (label) => setFilter('size_band', label, `Size: ${label}`),
+});
+renderBeadChart();
+renderTable();
+
+})();
+</script>
 {% endblock %}

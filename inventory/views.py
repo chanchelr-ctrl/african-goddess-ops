@@ -630,10 +630,181 @@ def po_parse_receipt(request, pk):
 # ---------------------------------------------------------------------------
 
 
+# ---- Data BI dashboard: derived categorisations ---------------------------
+
+# Order matters in each list: more specific patterns checked first
+_FINDING_KEYWORDS = ("clasp", "extender", "bail", "spacer bead", "spacer",
+                     "crimp", "stopper", "fishing", "tube bail", "wig clip",
+                     "snap clip", "jump ring", "extender chain")
+_WIRE_KEYWORDS = ("tiger tail", "beading wire", "chain")
+_PENDANT_KEYWORDS = ("pendant", "charm", "lotus", "protea", "sunburst",
+                     "logo round disc", "logo")
+_PACKAGING_KEYWORDS = ("ziplock", "zipper", "pvc", "self-sealing", "bag")
+
+# Bead-material sub-types (only meaningful for bead-form materials)
+_BEAD_KEYWORDS = (
+    ("Shell",          ("shell",)),
+    ("Pearl",          ("pearl", "freshwater")),
+    ("Crystal",        ("austrian crystal", "crystal", "czech")),
+    ("Polymer / Clay", ("polymer clay", "soft clay", "clay disc")),
+    ("Natural Stone",  ("natural stone", "amethyst", "howlite", "cats eye",
+                        "cat eye", "agate", "chalcedony", "angelite",
+                        "amazonite", "rose red")),
+    ("Glass",          ("glass", "porcelain", "faceted", "rondelle")),
+)
+
+_COLOUR_FAMILY_MAP = (
+    ("Multi / AB",       ("multi", "ab color", "ab electroplated", "rainbow")),
+    ("Greys & Steels",   ("stainless steel", "grey", "gray", "silver", "gunmetal")),
+    ("Whites & Creams",  ("white", "cream", "ivory", "porcelain", "natural shell")),
+    ("Blacks",           ("black", "jet")),
+    ("Browns & Earths",  ("brown", "sienna", "chocolate", "taupe", "bronze")),
+    ("Yellows & Golds",  ("gold", "champagne", "yellow", "amber")),
+    ("Oranges",          ("orange", "tangerine")),
+    ("Reds & Pinks",     ("red", "pink", "coral", "magenta", "watermelon", "rose")),
+    ("Purples",          ("amethyst", "purple", "lavender", "plum", "violet")),
+    ("Greens",           ("green", "lime", "sage", "amazonite", "teal", "mint")),
+    ("Blues",            ("blue", "turquoise", "periwinkle", "indigo")),
+)
+
+
+def _haystack(m):
+    return " ".join([m.name or "", m.description or "", m.shape or "",
+                     m.finish or "", m.colour or ""]).lower()
+
+
+def _material_category(m) -> str:
+    """All-materials high-level category. One of 8 buckets."""
+    h = _haystack(m)
+    if any(k in h for k in _PACKAGING_KEYWORDS):  return "Packaging"
+    if any(k in h for k in _WIRE_KEYWORDS):       return "Wire & Cord"
+    if any(k in h for k in _PENDANT_KEYWORDS):    return "Pendants & Charms"
+    if any(k in h for k in _FINDING_KEYWORDS):    return "Findings"
+    # Below this point we have a bead-form material — bucket by material:
+    for label, kws in _BEAD_KEYWORDS:
+        if any(k in h for k in kws):
+            return label
+    return "Other"
+
+
+def _bead_category(m):
+    """Bead-only sub-category. Returns None for findings/wire/packaging."""
+    h = _haystack(m)
+    if any(k in h for k in _PACKAGING_KEYWORDS): return None
+    if any(k in h for k in _WIRE_KEYWORDS):      return None
+    if any(k in h for k in _PENDANT_KEYWORDS):   return None
+    if any(k in h for k in _FINDING_KEYWORDS):   return None
+    for label, kws in _BEAD_KEYWORDS:
+        if any(k in h for k in kws):
+            return label
+    return "Other beads"
+
+
+def _colour_family(m) -> str:
+    h = (m.colour or "").lower() + " " + (m.finish or "").lower()
+    for label, kws in _COLOUR_FAMILY_MAP:
+        if any(k in h for k in kws):
+            return label
+    return "Other"
+
+
+def _size_band(m) -> str:
+    s = (m.item_size or "").lower()
+    if not s:
+        return "n/a"
+    import re as _re
+    match = _re.search(r"(\d+(?:[.,]\d+)?)\s*mm", s)
+    if not match:
+        return "n/a"
+    try:
+        val = float(match.group(1).replace(",", "."))
+    except ValueError:
+        return "n/a"
+    if val < 5:    return "4 mm"
+    if val < 7:    return "6 mm"
+    if val < 9:    return "8 mm"
+    if val < 11:   return "10 mm"
+    if val < 13:   return "12 mm"
+    return "12 mm+"
+
+
+def _stock_status(m) -> str:
+    if m.current_stock <= 0:
+        return "out"
+    if m.current_stock <= m.reorder_point:
+        return "low"
+    return "ok"
+
+
 @login_required
 def data_index(request):
-    """The 'Data' page — Export Data / Import Data buttons + recent change log."""
-    recent_changes = DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50]
+    """Inventory BI dashboard — 5 visualisations on top, searchable table
+    in the middle (driven by chart filters), import/export + change log
+    at the bottom.
+    """
+    import json
+    from collections import Counter
+
+    materials = list(
+        RawMaterial.objects
+        .filter(is_active=True)
+        .select_related("preferred_supplier")
+        .order_by("name")
+    )
+
+    # Derive + collect per-material attributes once
+    enriched = []
+    for m in materials:
+        cat = _material_category(m)
+        bead = _bead_category(m)
+        size = _size_band(m)
+        colour = _colour_family(m)
+        status = _stock_status(m)
+        stock_value = float(m.current_stock * m.last_paid_unit_cost)
+        enriched.append({
+            "sku": m.sku,
+            "name": m.name,
+            "item_size": m.item_size or "",
+            "colour": m.colour or "",
+            "shape": m.shape or "",
+            "supplier": m.preferred_supplier.name if m.preferred_supplier else "",
+            "unit": m.get_unit_display(),
+            "current_stock": int(m.current_stock),
+            "reorder_point": int(m.reorder_point),
+            "unit_cost": round(float(m.last_paid_unit_cost), 2),
+            "stock_value": round(stock_value, 2),
+            "category": cat,
+            "bead_category": bead,
+            "size_band": size,
+            "colour_family": colour,
+            "stock_status": status,
+        })
+
+    # Chart aggregates
+    stock_health_counter = Counter(e["stock_status"] for e in enriched)
+    stock_health_data = [
+        {"label": "OK",  "value": stock_health_counter.get("ok", 0),  "color": "#4d7a4d"},
+        {"label": "Low", "value": stock_health_counter.get("low", 0), "color": "#b0794a"},
+        {"label": "Out", "value": stock_health_counter.get("out", 0), "color": "#c84432"},
+    ]
+
+    category_counter = Counter(e["category"] for e in enriched)
+    category_data = [
+        {"label": k, "value": v} for k, v in category_counter.most_common()
+    ]
+
+    shape_counter = Counter((e["shape"] or "Other").strip() or "Other" for e in enriched)
+    shape_data = [
+        {"label": k, "value": v} for k, v in shape_counter.most_common(10)
+    ]
+
+    size_order = ["4 mm", "6 mm", "8 mm", "10 mm", "12 mm", "12 mm+", "n/a"]
+    size_counter = Counter(e["size_band"] for e in enriched)
+    size_data = [
+        {"label": s, "value": size_counter.get(s, 0)}
+        for s in size_order if size_counter.get(s, 0) > 0
+    ]
+
     counts = {
         "materials": RawMaterial.objects.count(),
         "active_materials": RawMaterial.objects.filter(is_active=True).count(),
@@ -642,9 +813,15 @@ def data_index(request):
         "bom_lines": BomLine.objects.count(),
         "change_log_entries": DataChangeLog.objects.count(),
     }
+
     return render(request, "inventory/data_index.html", {
-        "recent_changes": recent_changes,
-        "counts": counts,
+        "materials_json":    json.dumps(enriched),
+        "stock_health_json": json.dumps(stock_health_data),
+        "category_json":     json.dumps(category_data),
+        "shape_json":        json.dumps(shape_data),
+        "size_json":         json.dumps(size_data),
+        "recent_changes":    DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50],
+        "counts":            counts,
     })
 
 
