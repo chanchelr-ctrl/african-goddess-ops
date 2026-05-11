@@ -742,7 +742,6 @@ def data_index(request):
     in the middle (driven by chart filters), import/export + change log
     at the bottom.
     """
-    import json
     from collections import Counter
 
     materials = list(
@@ -815,11 +814,13 @@ def data_index(request):
     }
 
     return render(request, "inventory/data_index.html", {
-        "materials_json":    json.dumps(enriched),
-        "stock_health_json": json.dumps(stock_health_data),
-        "category_json":     json.dumps(category_data),
-        "shape_json":        json.dumps(shape_data),
-        "size_json":         json.dumps(size_data),
+        # Pass raw Python objects — the template's |json_script will encode
+        # them once. (Don't double-encode with json.dumps first.)
+        "materials_data":    enriched,
+        "stock_health_data": stock_health_data,
+        "category_data":     category_data,
+        "shape_data":        shape_data,
+        "size_data":         size_data,
         "recent_changes":    DataChangeLog.objects.select_related("user").order_by("-timestamp")[:50],
         "counts":            counts,
     })
