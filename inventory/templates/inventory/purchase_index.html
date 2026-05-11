@@ -31,11 +31,11 @@
                         <td><input type="checkbox" name="sku" value="{{ x.material.sku }}" checked></td>
                         <td><code>{{ x.material.sku }}</code></td>
                         <td>{{ x.material.name }}</td>
-                        <td>{{ x.material.current_stock }}</td>
-                        <td>{{ x.material.reorder_point }}</td>
-                        <td>{{ x.material.pack_size }}</td>
-                        <td><strong>{{ x.packs }}</strong></td>
-                        <td>R&nbsp;{{ x.material.last_paid_unit_cost|floatformat:2 }}</td>
+                        <td>{{ x.material.current_stock|floatformat:0 }}</td>
+                        <td>{{ x.material.reorder_point|floatformat:0 }}</td>
+                        <td>{{ x.material.pack_size|floatformat:0 }}</td>
+                        <td><strong>{{ x.packs|floatformat:0 }}</strong></td>
+                        <td>R&nbsp;{{ x.material.last_paid_unit_cost|floatformat:0 }}</td>
                         <td><a href="{{ x.temu_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-temu">Find on Temu →</a></td>
                     </tr>
                 {% endfor %}
@@ -61,7 +61,7 @@
                     <td>{{ po.supplier.name }}</td>
                     <td><span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span></td>
                     <td>{{ po.temu_order_id|default:"—" }}</td>
-                    <td style="text-align:right;">R&nbsp;{{ po.total_cost|floatformat:2 }}</td>
+                    <td style="text-align:right;">R&nbsp;{{ po.total_cost|floatformat:0 }}</td>
                 </tr>
             {% endfor %}
             </tbody>

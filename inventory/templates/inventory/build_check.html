@@ -102,14 +102,14 @@
                 {% for l in bom_lines %}
                     <tr class="{% if not l.sufficient %}short{% endif %}">
                         <td><code>{{ l.material.sku }}</code><br><small style="color:var(--text-muted);">{{ l.material.name }}</small></td>
-                        <td style="text-align:right;">{{ l.qty_per_unit }}<small class="qty-per">{{ l.material.unit }}</small></td>
-                        <td style="text-align:right;"><strong>{{ l.need }}</strong><small class="qty-per">{{ l.material.unit }}</small></td>
-                        <td style="text-align:right;">{{ l.have }}<small class="qty-per">{{ l.material.unit }}</small></td>
+                        <td style="text-align:right;">{{ l.qty_per_unit|floatformat:0 }}<small class="qty-per">{{ l.material.unit }}</small></td>
+                        <td style="text-align:right;"><strong>{{ l.need|floatformat:0 }}</strong><small class="qty-per">{{ l.material.unit }}</small></td>
+                        <td style="text-align:right;">{{ l.have|floatformat:0 }}<small class="qty-per">{{ l.material.unit }}</small></td>
                         <td style="text-align:right;">
                             {% if l.sufficient %}
                                 <span class="pill-ok">OK</span>
                             {% else %}
-                                <span class="pill-short">Short by&nbsp;{{ l.short }}</span>
+                                <span class="pill-short">Short by&nbsp;{{ l.short|floatformat:0 }}</span>
                             {% endif %}
                         </td>
                     </tr>

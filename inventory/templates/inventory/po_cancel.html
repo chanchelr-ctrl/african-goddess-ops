@@ -27,9 +27,9 @@
                 <tr>
                     <td><code>{{ x.material.sku }}</code></td>
                     <td>{{ x.material.name }}</td>
-                    <td>{{ x.current_stock }} <small>{{ x.material.unit }}</small></td>
-                    <td style="text-align:right;"><strong style="color:var(--alert);">−{{ x.qty }}</strong></td>
-                    <td style="text-align:right;">{{ x.current_stock|add:"-1"|add:x.qty|add:"1" }} <small>{{ x.material.unit }}</small></td>
+                    <td>{{ x.current_stock|floatformat:0 }} <small>{{ x.material.unit }}</small></td>
+                    <td style="text-align:right;"><strong style="color:var(--alert);">−{{ x.qty|floatformat:0 }}</strong></td>
+                    <td style="text-align:right;">{{ x.after_cancel|floatformat:0 }} <small>{{ x.material.unit }}</small></td>
                 </tr>
             {% endfor %}
             </tbody>

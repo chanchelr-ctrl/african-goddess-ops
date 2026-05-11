@@ -505,6 +505,7 @@ def po_cancel(request, pk):
                 "material": line.raw_material,
                 "qty": qty_units,
                 "current_stock": line.raw_material.current_stock,
+                "after_cancel": line.raw_material.current_stock - qty_units,
             })
 
     if request.method == "POST":

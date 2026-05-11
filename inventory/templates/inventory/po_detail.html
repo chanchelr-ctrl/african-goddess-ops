@@ -11,7 +11,7 @@
 </p>
 
 <section class="card">
-    <div class="card-header"><h2>Lines</h2><span class="meta">Total: <strong>R&nbsp;{{ po.total_cost|floatformat:2 }}</strong></span></div>
+    <div class="card-header"><h2>Lines</h2><span class="meta">Total: <strong>R&nbsp;{{ po.total_cost|floatformat:0 }}</strong></span></div>
     <div class="card-body">
         <table>
             <thead><tr><th>SKU</th><th>Material</th><th>Pack size</th><th>Packs</th><th>Units total</th><th>Unit cost</th><th>Line total</th><th>Temu</th></tr></thead>
@@ -20,11 +20,11 @@
                 <tr>
                     <td><code>{{ x.line.raw_material.sku }}</code></td>
                     <td>{{ x.line.raw_material.name }}</td>
-                    <td>{{ x.line.pack_size }}</td>
-                    <td>{{ x.line.pack_count }}</td>
-                    <td><strong>{{ x.line.units_total }}</strong></td>
-                    <td>R&nbsp;{{ x.line.unit_cost|floatformat:4 }}</td>
-                    <td>R&nbsp;{{ x.line.line_total|floatformat:2 }}</td>
+                    <td>{{ x.line.pack_size|floatformat:0 }}</td>
+                    <td>{{ x.line.pack_count|floatformat:0 }}</td>
+                    <td><strong>{{ x.line.units_total|floatformat:0 }}</strong></td>
+                    <td>R&nbsp;{{ x.line.unit_cost|floatformat:0 }}</td>
+                    <td>R&nbsp;{{ x.line.line_total|floatformat:0 }}</td>
                     <td><a href="{{ x.temu_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-temu">Find on Temu →</a></td>
                 </tr>
             {% endfor %}

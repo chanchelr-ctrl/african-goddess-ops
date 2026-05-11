@@ -38,7 +38,7 @@
                     <tr><th style="text-align:left; padding:0.5rem 0;">Tracking</th><td><code>{{ parsed.tracking_number }}</code></td></tr>
                     {% endif %}
                     {% if parsed.total %}
-                    <tr><th style="text-align:left; padding:0.5rem 0;">Total</th><td>R&nbsp;{{ parsed.total|floatformat:2 }}</td></tr>
+                    <tr><th style="text-align:left; padding:0.5rem 0;">Total</th><td>R&nbsp;{{ parsed.total|floatformat:0 }}</td></tr>
                     {% endif %}
                 </tbody>
             </table>

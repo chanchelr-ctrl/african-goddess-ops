@@ -24,9 +24,9 @@
                 {% for s in shortfalls %}
                 <tr>
                     <td><code>{{ s.material.sku }}</code> — {{ s.material.name }}</td>
-                    <td>{{ s.need }}</td>
-                    <td>{{ s.have }}</td>
-                    <td><strong>{{ s.short }}</strong></td>
+                    <td>{{ s.need|floatformat:0 }}</td>
+                    <td>{{ s.have|floatformat:0 }}</td>
+                    <td><strong>{{ s.short|floatformat:0 }}</strong></td>
                 </tr>
                 {% endfor %}
             </tbody>
