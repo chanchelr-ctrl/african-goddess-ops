@@ -33,8 +33,27 @@
             --radius: 10px;
         }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-               background: var(--bg); color: var(--text); line-height: 1.55; font-size: 15px; }
+        body {
+            margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--text); line-height: 1.55; font-size: 15px;
+            background-color: var(--bg);
+            background-image: url("{% static 'branding/page-bg.png' %}");
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            position: relative;
+            min-height: 100vh;
+        }
+        /* Soft cream overlay so the image reads as texture, not visual noise */
+        body::before {
+            content: "";
+            position: fixed; inset: 0;
+            background: rgba(245, 236, 217, 0.70);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body > * { position: relative; z-index: 1; }
         a { color: var(--primary); text-decoration: none; }
         a:hover { color: var(--primary-dark); text-decoration: underline; }
         h1, h2, h3 { font-family: Georgia, serif; font-weight: 600; letter-spacing: 0.3px; margin: 0 0 0.5rem; }

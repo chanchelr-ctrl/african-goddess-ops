@@ -6,8 +6,23 @@
 
 1. Double-click **`start.bat`** in the project folder. A black PowerShell window opens. **Leave it open while you work.**
 2. Your browser opens at `http://127.0.0.1:8000/`. If not, type that into the browser yourself.
-3. Sign in. The home page is the **Operations Dashboard**.
+3. Sign in. The home page is the **launchpad** — four big workflow rows: **Build · Track · Purchase · Data**. Click anywhere on a row to enter that workflow.
 4. When you're done, close the browser tab. To shut down the app fully, close the black window.
+
+## Reading the launchpad
+
+The home page is a launchpad. Each row corresponds to one workflow and shows three at-a-glance KPIs on the right:
+
+- **Build** — what you can make right now, total units producible, items blocked by stock.
+- **Track** — projects in flight, units made vs. planned, runs this week.
+- **Purchase** — materials at or below reorder, open POs, ZAR value on order.
+- **Data** — active materials, BOM lines, change-log entries today.
+
+Click anywhere on a row (the illustration, the label, the KPI tiles, or the chevron on the right) and you'll land on that workflow's page. Rows flag themselves with an alert tint when there's something needing your attention (e.g. materials below reorder turn the Purchase row warm-terracotta).
+
+## All numbers display as whole numbers
+
+Throughout the app, quantities, stock counts and ZAR values render as whole integers (no trailing decimals). The underlying data keeps full precision; you just see the clean round version on screen.
 
 > **Why `.bat` and not `.ps1`?** Windows blocks unsigned PowerShell scripts by default for safety. The `.bat` files are tiny wrappers that launch the real `.ps1` scripts with permission to run. You can ignore the technicality — just double-click `start.bat`.
 
@@ -96,39 +111,65 @@ Use this when you've recounted and the actual count doesn't match the system, or
 5. Add a note explaining why (very useful 6 months later).
 6. Click **Save**.
 
-### 7. Read the dashboard
+### 7. Plan & start a build
 
-The home page (`/`) shows you, at a glance:
-- **How many raw materials are below their reorder point** (red number = act today).
-- **How many open purchase orders** you're waiting on.
-- **Total stock value** at last-paid cost.
-- **Materials needing reorder** — table you can act on.
-- **Open POs** — click a reference to open the PO.
-- **Recent production runs**.
+The **Build** workflow is the fastest way to check whether you can make N of something, and to spin up a project from that variant.
 
-If everything is healthy ("Everything is above its reorder point"), you have nothing to act on today.
+1. Click **Build** from the launchpad → **Plan a new build**.
+2. The Sellable SKU field is a **smart search**: type "tangerine", "SBR01" or any part of the name and the dropdown filters live. Or open the dropdown and pick.
+3. Enter a quantity and click **Check stock →**.
+4. The page shows a **Materials needed** table — every raw material on this product's BOM with: per-unit qty, total need, in-stock, and a status pill (OK / Short by N). Rows that are short are highlighted in alert tint.
+5. If everything is OK:
+   - A **Start project** card appears with the project name **pre-filled** as `{qty} × {product} — {variant}`. You can keep or edit the name.
+   - Click **Start project →** to spin up the project.
+6. If anything is short, the same table tells you what to chase. Click **Go to Purchase →** to draft a PO from the low-stock list.
 
-## Bulk import from spreadsheet
+### 8. Read the launchpad
 
-If you have years of data in spreadsheets, you can import it in one go. Open PowerShell in the project folder, then:
+The launchpad on `/` is your morning check. It shows four workflow rows; each has three KPIs to the right. If a row goes warm-terracotta it's flagging something that needs attention. Click any row to enter its workflow page.
+
+## Inventory Analytics — the Data page
+
+The **Data** page (top menu → **Data**) is your inventory analytics dashboard. The top of the page has three drill-down charts; the table below lists every raw material; the bottom of the page holds Export / Import and the recent change log.
+
+### The three charts
+
+- **Material category** — donut by material type (Findings, Crystal, Natural Stone, Glass, Shell, Polymer/Clay, Wire & Cord, Pendants & Charms). Click a slice to drill into colour-family within that category; click again to see top materials by stock value.
+- **Stock value (ZAR)** — donut showing total stock value per category, with the running total in the centre. Click a slice to see the top individual materials by R value in that category.
+- **Bead analysis** — four levels of drill-down on the beads subset only. Bead material → colour family → size band → individual materials by R value.
+
+Every chart has a **breadcrumb above the chart** that appears once you've drilled in. Click "All" or any earlier crumb to jump back to that level. Whatever you click in a chart also filters the table below.
+
+### The materials table
+
+- **Smart search** input above the table filters as you type — matches SKU, name, colour, shape, supplier, size.
+- An **active filter pill** appears in copper when a chart segment is selected. Click the ✕ on the pill to clear.
+- Table shows 11 columns including a colour-swatch dot and a stock-status pill (OK / Low / Out).
+- Counts in the top-right ("23 of 81 materials") update as you filter.
+
+### Export & import the master file
+
+At the bottom of the Data page:
+
+1. Click **Download MasterData.xlsx** to get a fresh Excel snapshot with three sheets — **MaterialMaster**, **ProductSpec**, **ChangeLog**.
+2. Edit the .xlsx in Excel — change material attributes, costs, reorder points, or BOM quantities.
+3. Come back to the Data page, click **Choose File**, pick your edited .xlsx, and click **Apply file to database**.
+4. Optional: tick **Prune missing rows** to also remove materials/BOM lines that you deleted from the file (default is additive — won't remove anything not present).
+
+Every change applied by the import is recorded in the **ChangeLog**, attributed to your username.
+
+The database wins on conflict: the .xlsx you downloaded is a point-in-time snapshot. To see fresh figures, click Download again.
+
+## Bulk import from the original spreadsheets
+
+The app shipped with a one-shot importer that reads the client's original 3-file spreadsheet format and bootstraps the database. This is intended only for first-time setup or full re-imports.
 
 ```powershell
-.\.venv\Scripts\python.exe manage.py import_suppliers path\to\suppliers.csv --dry-run
-.\.venv\Scripts\python.exe manage.py import_materials path\to\materials.csv --dry-run
-.\.venv\Scripts\python.exe manage.py import_products  path\to\products.csv  --dry-run
-.\.venv\Scripts\python.exe manage.py import_boms      path\to\boms.csv      --dry-run
+.\.venv\Scripts\python.exe manage.py migrate_bom_xlsx --dry-run
+.\.venv\Scripts\python.exe manage.py migrate_bom_xlsx --with-initial-stock
 ```
 
-The `--dry-run` flag validates the file without writing to the database. Read the output, fix any errors, then re-run **without** `--dry-run` to commit.
-
-**Order matters.** Suppliers first, then materials (which reference suppliers by name), then products, then BOMs (which reference both).
-
-CSV column requirements:
-
-- **suppliers.csv**: required `name`; optional `contact_name`, `email`, `phone`, `website`, `typical_lead_time_days`, `notes`, `is_active`
-- **materials.csv**: required `sku`, `name`; optional `unit`, `current_stock`, `reorder_point`, `reorder_quantity`, `last_paid_unit_cost`, `preferred_supplier_name`, `notes`, `is_active`
-- **products.csv**: required `sku`, `name`; optional `pillar`, `retail_price_zar`, `notes`, `is_active`
-- **boms.csv**: required `product_sku`, `material_sku`, `quantity`; optional `notes`
+After the bootstrap, the **standard way to apply edits** is through the **Data → Import** button on the web app (using the MasterData.xlsx format from `Export`). That's safer, integrates with the change log, and round-trips cleanly.
 
 ## Data — Export & Import
 
@@ -195,7 +236,7 @@ A: Purchase orders list → filter by Supplier → date range filter at the top.
 A: Open PowerShell in the project folder and run `.\.venv\Scripts\python.exe manage.py reconcile_stock`. It compares each material's current stock to the audit-trail sum and flags any discrepancies. Add `--fix` to recompute from the audit log.
 
 **Q: I want to give my accountant the year's data.**
-A: Run `.\.venv\Scripts\python.exe manage.py export_all`. It writes a dated folder under `exports\` with one CSV per table. Send the folder to your accountant.
+A: From the **Data** page click **Download MasterData.xlsx**. That gives them a single Excel file with every raw material, every BOM line, and every recorded change. For PO and production-run reports, use the admin's filter & export options.
 
 ## When something breaks
 
