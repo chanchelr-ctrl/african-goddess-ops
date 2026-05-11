@@ -134,18 +134,15 @@
     .illus .accent-stroke      { stroke: var(--gold); fill: none; stroke-width: 1.4; stroke-linecap: round; }
     .illus .ink                { fill: var(--primary); }
 
-    /* ---------- Per-glyph hover micro-animations -------------------- */
+    /* ---------- Per-scene hover micro-animations -------------------- */
 
-    /* BUILD: bead strand drifts 6px right; checkmark pops */
-    .illus-build .bead-strand {
-        transition: transform .55s cubic-bezier(.2,.8,.2,1);
+    /* BUILD — workbench scene: needle slides along the cord, feature bead bobs */
+    .illus-build .needle {
+        transition: transform .65s cubic-bezier(.2,.8,.2,1);
     }
-    .launch-row:hover .illus-build .bead-strand { transform: translateX(6px); }
-    .illus-build .check-mark {
-        transform-origin: center; transform-box: fill-box;
-        transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    .launch-row:hover .illus-build .needle {
+        transform: translate(28px, -14px) rotate(-4deg);
     }
-    .launch-row:hover .illus-build .check-mark { transform: scale(1.18); }
     .illus-build .feature-bead {
         transform-origin: center; transform-box: fill-box;
     }
@@ -154,72 +151,90 @@
     }
     @keyframes bead-bob {
         0%, 100% { transform: scale(1); }
-        50%      { transform: scale(1.25); }
+        50%      { transform: scale(1.30); }
+    }
+    .illus-build .design-card {
+        transition: transform .45s cubic-bezier(.2,.8,.2,1);
+    }
+    .launch-row:hover .illus-build .design-card {
+        transform: translate(165px, 175px) rotate(-2deg);
     }
 
-    /* TRACK: progress bar fills on hover */
+    /* TRACK — three-stage vignette: progress fills, stage 3 glows, arrows complete */
     .illus-track .progress-fill {
         transform-origin: left center; transform-box: fill-box;
-        transform: scaleX(.35);
+        transform: scaleX(.50);
         transition: transform .9s cubic-bezier(.2,.8,.2,1);
     }
     .launch-row:hover .illus-track .progress-fill { transform: scaleX(.66); }
-    .illus-track .run-dot {
+    .illus-track .stage-3-glow {
+        opacity: 0;
+        transition: opacity .45s ease;
+    }
+    .launch-row:hover .illus-track .stage-3-glow { opacity: 1; }
+    .illus-track .flow-arrow {
+        stroke-dasharray: 24; stroke-dashoffset: 24;
+        transition: stroke-dashoffset .55s ease-out;
+    }
+    .launch-row:hover .illus-track .flow-arrow { stroke-dashoffset: 0; }
+    .illus-track .bead-active {
         transform-origin: center; transform-box: fill-box;
-        transition: transform .25s ease;
     }
-    .launch-row:hover .illus-track .run-dot:nth-of-type(1) {
-        animation: dot-pop .5s ease-out .05s both;
-    }
-    .launch-row:hover .illus-track .run-dot:nth-of-type(2) {
-        animation: dot-pop .5s ease-out .18s both;
-    }
-    .launch-row:hover .illus-track .run-dot:nth-of-type(3) {
-        animation: dot-pop .5s ease-out .31s both;
-    }
-    @keyframes dot-pop {
-        0%   { transform: scale(1); }
-        50%  { transform: scale(1.45); }
-        100% { transform: scale(1); }
+    .launch-row:hover .illus-track .bead-active {
+        animation: bead-bob 1.4s ease-in-out infinite;
     }
 
-    /* PURCHASE: line items stagger-shift right on hover */
-    .illus-purchase .po-line {
+    /* PURCHASE — crate scene: lid lifts, popping packet rises, parcel bow flutters */
+    .illus-purchase .crate-lid {
+        transform-origin: 120px 50px;
+        transition: transform .55s cubic-bezier(.2,.8,.2,1);
+    }
+    .launch-row:hover .illus-purchase .crate-lid {
+        transform: translate(0, -22px) rotate(-12deg);
+    }
+    .illus-purchase .popping-packet {
         transition: transform .45s cubic-bezier(.2,.8,.2,1);
     }
-    .launch-row:hover .illus-purchase .po-line:nth-of-type(1) { transform: translateX(4px); }
-    .launch-row:hover .illus-purchase .po-line:nth-of-type(2) { transform: translateX(4px); transition-delay: .06s; }
-    .launch-row:hover .illus-purchase .po-line:nth-of-type(3) { transform: translateX(4px); transition-delay: .12s; }
-    .illus-purchase .temu-button {
+    .launch-row:hover .illus-purchase .popping-packet { transform: translateY(-9px); }
+    .illus-purchase .parcel-bow {
         transform-origin: center; transform-box: fill-box;
-        transition: transform .3s cubic-bezier(.2,.8,.2,1);
     }
-    .launch-row:hover .illus-purchase .temu-button { transform: scale(1.06); }
+    .launch-row:hover .illus-purchase .parcel-bow {
+        animation: bow-flutter .9s ease-out;
+    }
+    @keyframes bow-flutter {
+        0%, 100% { transform: scale(1) rotate(0); }
+        30%      { transform: scale(1.20) rotate(-3deg); }
+        65%      { transform: scale(1.10) rotate(2deg); }
+    }
 
-    /* DATA: rows highlight one-by-one on hover; export button bobs */
-    .illus-data .ss-row {
-        transition: fill .3s ease;
+    /* DATA — ledger scene: ribbon sways, page corner curls, seal presses, pencil tilts */
+    .illus-data .ribbon-target {
+        transform-origin: 264px 30px; transform-box: view-box;
     }
-    .launch-row:hover .illus-data .ss-row:nth-of-type(1) {
-        fill: var(--primary-50); transition-delay: .05s;
+    .launch-row:hover .illus-data .ribbon-target {
+        animation: ribbon-sway 2.6s ease-in-out infinite;
     }
-    .launch-row:hover .illus-data .ss-row:nth-of-type(2) {
-        fill: var(--primary-50); transition-delay: .15s;
+    @keyframes ribbon-sway {
+        0%, 100% { transform: rotate(0); }
+        25%      { transform: rotate(-1.8deg); }
+        75%      { transform: rotate(1.2deg); }
     }
-    .launch-row:hover .illus-data .ss-row:nth-of-type(3) {
-        fill: rgba(176,121,74,0.18); transition-delay: .25s;
-    }
-    .illus-data .export-button {
+    .illus-data .wax-seal-target {
         transform-origin: center; transform-box: fill-box;
-        transition: transform .3s ease;
+        transition: transform .55s cubic-bezier(.2,.8,.2,1);
     }
-    .launch-row:hover .illus-data .export-button {
-        animation: export-bob .8s ease-in-out;
+    .launch-row:hover .illus-data .wax-seal-target { transform: rotate(-12deg) scale(1.15); }
+    .illus-data .pencil-target {
+        transform-origin: 110px 147px; transform-box: view-box;
+        transition: transform .45s cubic-bezier(.2,.8,.2,1);
     }
-    @keyframes export-bob {
-        0%, 100% { transform: translateY(0); }
-        50%      { transform: translateY(-3px); }
+    .launch-row:hover .illus-data .pencil-target { transform: rotate(6deg); }
+    .illus-data .page-corner {
+        transform-origin: 134px 154px; transform-box: view-box;
+        transition: transform .45s cubic-bezier(.2,.8,.2,1);
     }
+    .launch-row:hover .illus-data .page-corner { transform: scale(0.85) rotate(-12deg); }
 
     /* ---------- Label column ---------------------------------------- */
     .row-label h2 {
@@ -292,14 +307,18 @@
 
     /* ---------- Reduced motion -------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
-        .launch-row, .illus, .illus-build .bead-strand, .illus-build .feature-bead,
-        .illus-track .progress-fill, .illus-track .run-dot,
-        .illus-purchase .po-line, .illus-purchase .temu-button,
-        .illus-data .ss-row, .illus-data .export-button {
+        .launch-row, .illus,
+        .illus-build .needle, .illus-build .feature-bead, .illus-build .design-card,
+        .illus-track .progress-fill, .illus-track .stage-3-glow,
+        .illus-track .flow-arrow, .illus-track .bead-active,
+        .illus-purchase .crate-lid, .illus-purchase .popping-packet, .illus-purchase .parcel-bow,
+        .illus-data .ribbon-target, .illus-data .wax-seal-target,
+        .illus-data .pencil-target, .illus-data .page-corner {
             animation: none !important; transition: none !important;
         }
         .launch-row { opacity: 1; transform: none; }
         .illus-track .progress-fill { transform: scaleX(.66); }
+        .illus-track .flow-arrow { stroke-dashoffset: 0; }
     }
 </style>
 {% endblock %}
@@ -318,54 +337,72 @@
     <a href="/build/" class="launch-row {% if build_alert %}alert{% endif %}" aria-label="Build — plan and start a build">
         <div class="row-illus">
             <svg class="illus illus-build" viewBox="0 0 360 220" aria-hidden="true">
-                {# Drop shadow on the inner card #}
-                <rect class="ui-card-shadow" x="22" y="22" width="316" height="180" rx="10"/>
-                {# Inner card #}
-                <rect class="ui-card" x="18" y="18" width="316" height="180" rx="10"/>
+                {# Soft worktable surface at the bottom #}
+                <rect x="0" y="0" width="360" height="220" fill="var(--surface)"/>
+                <path d="M 0 175 L 360 175 L 360 220 L 0 220 Z" fill="#e8d9bf" opacity="0.32"/>
+                <line x1="0" y1="184" x2="360" y2="184" stroke="#c9a87a" opacity="0.3" stroke-width="0.6"/>
+                <line x1="0" y1="194" x2="360" y2="194" stroke="#c9a87a" opacity="0.22" stroke-width="0.5"/>
 
-                {# Header strip #}
-                <rect x="34" y="34" width="284" height="22" rx="4" fill="var(--surface-2)"/>
-                <text class="ui-meta" x="44" y="48">VARIANT</text>
-                <circle class="accent" cx="306" cy="45" r="3"/>
-
-                {# Variant pill #}
-                <rect x="34" y="64" width="180" height="28" rx="6" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
-                <text class="ui-brand" x="46" y="83">SBR01 — Earrings</text>
-                <path class="accent-stroke" d="M 200 80 L 204 84 L 208 78"/>
-
-                {# Palette swatches #}
-                <circle cx="232" cy="78" r="6" fill="#d68a4a"/>
-                <circle cx="248" cy="78" r="6" fill="#a35434"/>
-                <circle cx="264" cy="78" r="6" fill="#e8b779"/>
-                <circle cx="280" cy="78" r="6" fill="#7a4828"/>
-
-                {# Bead strand area — a horizontal cord with beads being threaded #}
-                <g class="bead-strand">
-                    <line x1="34" y1="124" x2="318" y2="124"
-                          stroke="var(--text-muted)" stroke-width="0.8"
-                          stroke-dasharray="2 2"/>
-                    <circle cx="60" cy="124" r="6" fill="#d6c2a0" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="80" cy="124" r="7" fill="#c79665" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="102" cy="124" r="5" fill="#e8d5b0" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle class="feature-bead accent" cx="124" cy="124" r="8"/>
-                    <circle cx="146" cy="124" r="5" fill="#a86b3e" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="166" cy="124" r="7" fill="#c79665" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="188" cy="124" r="6" fill="#d6c2a0" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="208" cy="124" r="5" fill="#e8d5b0" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="228" cy="124" r="7" fill="#a86b3e" stroke="var(--border)" stroke-width="0.8"/>
-                    <circle cx="248" cy="124" r="6" fill="#c79665" stroke="var(--border)" stroke-width="0.8"/>
+                {# Bead organizer tray on the left #}
+                <g transform="translate(20, 30)">
+                    <rect width="135" height="125" rx="6" fill="#5e3e26" stroke="#3a2418" stroke-width="0.8"/>
+                    <rect x="3" y="3" width="129" height="119" rx="4" fill="#faf3e0"/>
+                    <g stroke="#5e3e26" stroke-width="0.8">
+                        <line x1="35" y1="6" x2="35" y2="119"/>
+                        <line x1="68" y1="6" x2="68" y2="119"/>
+                        <line x1="101" y1="6" x2="101" y2="119"/>
+                        <line x1="6" y1="42" x2="129" y2="42"/>
+                        <line x1="6" y1="80" x2="129" y2="80"/>
+                    </g>
+                    {# Row 1 #}
+                    <g><circle cx="14" cy="20" r="3" fill="#d68a4a"/><circle cx="22" cy="26" r="3" fill="#d68a4a"/><circle cx="29" cy="20" r="3" fill="#d68a4a"/></g>
+                    <g><circle cx="46" cy="20" r="3" fill="#a35434"/><circle cx="55" cy="27" r="3" fill="#a35434"/><circle cx="62" cy="20" r="3" fill="#a35434"/></g>
+                    <g><circle cx="79" cy="20" r="3" fill="#e8b779"/><circle cx="88" cy="27" r="3" fill="#e8b779"/><circle cx="95" cy="20" r="3" fill="#e8b779"/></g>
+                    <g><circle cx="112" cy="20" r="3" fill="#7a4828"/><circle cx="121" cy="27" r="3" fill="#7a4828"/><circle cx="128" cy="20" r="3" fill="#7a4828"/></g>
+                    {# Row 2 #}
+                    <g><circle cx="14" cy="58" r="3" fill="#c79665"/><circle cx="22" cy="64" r="3" fill="#c79665"/><circle cx="29" cy="58" r="3" fill="#c79665"/></g>
+                    <g><circle cx="46" cy="58" r="3" fill="#5e7a5b"/><circle cx="55" cy="65" r="3" fill="#5e7a5b"/><circle cx="62" cy="58" r="3" fill="#5e7a5b"/></g>
+                    <g><circle cx="79" cy="58" r="3" fill="#b87c6b"/><circle cx="88" cy="65" r="3" fill="#b87c6b"/><circle cx="95" cy="58" r="3" fill="#b87c6b"/></g>
+                    <g><circle cx="112" cy="58" r="3" fill="#d68a4a"/><circle cx="121" cy="65" r="3" fill="#d68a4a"/><circle cx="128" cy="58" r="3" fill="#d68a4a"/></g>
+                    {# Row 3 #}
+                    <g><circle cx="14" cy="96" r="3" fill="#a35434"/><circle cx="22" cy="103" r="3" fill="#a35434"/><circle cx="29" cy="96" r="3" fill="#a35434"/></g>
+                    <g><circle cx="46" cy="96" r="3" fill="#e8b779"/><circle cx="55" cy="103" r="3" fill="#e8b779"/><circle cx="62" cy="96" r="3" fill="#e8b779"/></g>
+                    <g><circle cx="79" cy="96" r="3" fill="#7a4828"/><circle cx="88" cy="103" r="3" fill="#7a4828"/><circle cx="95" cy="96" r="3" fill="#7a4828"/></g>
+                    <g><circle cx="112" cy="96" r="3" fill="#c79665"/><circle cx="121" cy="103" r="3" fill="#c79665"/><circle cx="128" cy="96" r="3" fill="#c79665"/></g>
                 </g>
 
-                {# Bottom row: sufficiency pill + start button #}
-                <rect class="ui-pill-bg" x="34" y="158" width="116" height="26" rx="13"/>
-                <g class="check-mark">
-                    <path d="M 46 171 L 51 176 L 60 167" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <text class="ui-pill-text" x="68" y="174">Can make 12</text>
+                {# Cord arc — a soft curve that the in-progress bracelet follows #}
+                <path d="M 175 80 Q 240 60 300 100 Q 330 145 280 180"
+                      stroke="#8a6557" stroke-width="0.8" fill="none" stroke-dasharray="2 2" opacity="0.7"/>
 
-                <rect class="ui-button" x="234" y="158" width="84" height="26" rx="6"/>
-                <text class="ui-button-text" x="248" y="174">Start build</text>
-                <path d="M 308 168 L 313 171 L 308 174" fill="none" stroke="var(--surface)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                {# In-progress bracelet beads along the cord #}
+                <circle cx="183" cy="78" r="5" fill="#d68a4a" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="200" cy="71" r="5.5" fill="#a35434" stroke="#7a4828" stroke-width="0.5"/>
+                <circle class="feature-bead" cx="220" cy="68" r="6.5" fill="var(--gold)" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="240" cy="68" r="5" fill="#7a4828" stroke="#3a2418" stroke-width="0.5"/>
+                <circle cx="259" cy="73" r="5.5" fill="#e8b779" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="277" cy="84" r="5" fill="#c79665" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="293" cy="100" r="5.5" fill="#a35434" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="305" cy="125" r="5" fill="#d68a4a" stroke="#7a4828" stroke-width="0.5"/>
+                <circle cx="304" cy="148" r="5.5" fill="#7a4828" stroke="#3a2418" stroke-width="0.5"/>
+
+                {# Threading needle pointing toward the next bead-to-add #}
+                <g class="needle">
+                    <line x1="155" y1="105" x2="195" y2="80" stroke="#8a6557" stroke-width="1.2" stroke-linecap="round"/>
+                    <ellipse cx="156" cy="106" rx="1.3" ry="2.4" fill="none" stroke="#8a6557" stroke-width="1" transform="rotate(28 156 106)"/>
+                </g>
+
+                {# Design sketch card peeking from below the tray #}
+                <g class="design-card" transform="translate(165, 175) rotate(-8)">
+                    <rect x="0" y="0" width="58" height="38" rx="2" fill="#fff" stroke="var(--border)" stroke-width="0.8"/>
+                    <circle cx="8" cy="10" r="2" fill="#d68a4a" opacity="0.7"/>
+                    <circle cx="16" cy="10" r="2" fill="#a35434" opacity="0.7"/>
+                    <circle cx="24" cy="10" r="2" fill="#e8b779" opacity="0.7"/>
+                    <circle cx="32" cy="10" r="2" fill="#7a4828" opacity="0.7"/>
+                    <line x1="6" y1="20" x2="50" y2="20" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.6"/>
+                    <line x1="6" y1="26" x2="42" y2="26" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="6" y1="32" x2="46" y2="32" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.5"/>
+                </g>
             </svg>
         </div>
         <div class="row-label">
@@ -393,52 +430,103 @@
     <a href="/track/" class="launch-row" aria-label="Track — in-flight projects and recent runs">
         <div class="row-illus">
             <svg class="illus illus-track" viewBox="0 0 360 220" aria-hidden="true">
-                <rect class="ui-card-shadow" x="22" y="22" width="316" height="180" rx="10"/>
-                <rect class="ui-card" x="18" y="18" width="316" height="180" rx="10"/>
+                <rect x="0" y="0" width="360" height="220" fill="var(--surface)"/>
 
-                {# Project header #}
-                <text class="ui-brand" x="34" y="44" style="font-size:13px; font-weight:600;">Tangerine Bracelet</text>
-                <text class="ui-meta" x="34" y="60">PROJECT · 12 units planned</text>
+                {# Subtitle / journey label #}
+                <text x="180" y="22" text-anchor="middle"
+                      style="font-family:Georgia,serif; font-style:italic; font-size:10px; fill:var(--text-muted); letter-spacing:2.5px;">
+                    SKETCH · ASSEMBLE · COMPLETE
+                </text>
 
-                {# Status pill #}
-                <rect x="240" y="32" width="80" height="20" rx="10" fill="var(--primary-50)"/>
-                <circle cx="252" cy="42" r="3" fill="var(--gold)"/>
-                <text class="ui-meta" x="260" y="46" style="fill:var(--text); font-size:9px; font-weight:600;">In progress</text>
-
-                {# Divider #}
-                <line x1="34" y1="78" x2="318" y2="78" stroke="var(--border)" stroke-width="1"/>
-
-                {# Progress section #}
-                <text class="ui-meta" x="34" y="96">PROGRESS</text>
-                <text class="ui-brand" x="240" y="98" style="font-size:11px; font-weight:600;">8 / 12 units</text>
-                <rect class="ui-progress-track" x="34" y="106" width="284" height="10" rx="5"/>
-                <rect class="ui-progress-fill"  x="34" y="106" width="284" height="10" rx="5"/>
-
-                {# Calendar tile + run dots #}
-                <text class="ui-meta" x="34" y="148">RUNS THIS WEEK</text>
-
-                {# Mini calendar / week strip #}
-                <g transform="translate(34, 158)">
-                    <rect width="42" height="26" rx="4" fill="var(--surface-2)"/>
-                    <text class="ui-meta" x="6" y="11" style="font-size:7px;">M T W T F S S</text>
-                    <line x1="4" y1="18" x2="38" y2="18" stroke="var(--border)" stroke-width="0.5"/>
-                    <text class="ui-brand" x="14" y="26" style="font-size:9px; font-weight:600;">wk 19</text>
+                {# Stage 1: Design sketch card #}
+                <g class="stage stage-1" transform="translate(20, 38)">
+                    <rect width="92" height="138" rx="3" fill="#fff" stroke="var(--border)" stroke-width="1"
+                          filter="drop-shadow(0 3px 6px rgba(0,0,0,0.08))"/>
+                    {# Sketched bead row #}
+                    <circle cx="14" cy="22" r="3.5" fill="none" stroke="var(--text-muted)" stroke-width="1.1"/>
+                    <circle cx="28" cy="22" r="4" fill="none" stroke="var(--text-muted)" stroke-width="1.1"/>
+                    <circle cx="44" cy="22" r="3.5" fill="none" stroke="var(--text-muted)" stroke-width="1.1"/>
+                    <circle cx="58" cy="22" r="4" fill="none" stroke="var(--text-muted)" stroke-width="1.1"/>
+                    <circle cx="74" cy="22" r="3.5" fill="none" stroke="var(--text-muted)" stroke-width="1.1"/>
+                    {# Annotation lines #}
+                    <line x1="10" y1="46" x2="74" y2="46" stroke="var(--text-muted)" stroke-width="0.7" opacity="0.6"/>
+                    <line x1="10" y1="56" x2="68" y2="56" stroke="var(--text-muted)" stroke-width="0.7" opacity="0.5"/>
+                    <line x1="10" y1="66" x2="74" y2="66" stroke="var(--text-muted)" stroke-width="0.7" opacity="0.5"/>
+                    <line x1="10" y1="76" x2="56" y2="76" stroke="var(--text-muted)" stroke-width="0.7" opacity="0.4"/>
+                    {# Tiny scale indicator: a ruler-like line with ticks #}
+                    <line x1="10" y1="98" x2="78" y2="98" stroke="var(--text-muted)" stroke-width="0.6" opacity="0.55"/>
+                    <line x1="10" y1="96" x2="10" y2="100" stroke="var(--text-muted)" stroke-width="0.6"/>
+                    <line x1="78" y1="96" x2="78" y2="100" stroke="var(--text-muted)" stroke-width="0.6"/>
+                    {# Stage name + done check #}
+                    <text x="46" y="118" text-anchor="middle"
+                          style="font-family:Georgia,serif; font-size:10px; font-weight:600; fill:var(--text);">Design</text>
+                    <circle cx="46" cy="128" r="5" fill="var(--success)"/>
+                    <path d="M 43 128 L 45 130 L 49 126" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                 </g>
 
-                {# Run dots showing recent production runs across the week #}
-                <circle class="run-dot accent" cx="100" cy="171" r="5"/>
-                <circle class="run-dot accent" cx="120" cy="171" r="5"/>
-                <circle class="run-dot accent" cx="140" cy="171" r="5"/>
-                <circle cx="160" cy="171" r="5" fill="var(--primary-50)"/>
-                <circle cx="180" cy="171" r="5" fill="var(--primary-50)"/>
+                {# Arrow stage 1 -> stage 2 #}
+                <path class="flow-arrow" d="M 116 110 L 132 110"
+                      stroke="var(--gold)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M 128 106 L 132 110 L 128 114"
+                      stroke="var(--gold)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 
-                {# 5 runs label #}
-                <text class="ui-brand" x="208" y="174" style="font-size:11px; font-weight:600;">5 runs</text>
-                <text class="ui-meta" x="208" y="186" style="font-size:8px;">recorded</text>
+                {# Stage 2: Assembly in progress (highlighted card) #}
+                <g class="stage stage-2" transform="translate(134, 38)">
+                    <rect width="92" height="138" rx="3" fill="#fff" stroke="var(--gold)" stroke-width="1.6"
+                          filter="drop-shadow(0 5px 10px rgba(176,121,74,0.22))"/>
+                    {# Cord with beads being threaded #}
+                    <line x1="10" y1="32" x2="80" y2="32" stroke="#8a6557" stroke-width="0.7" stroke-dasharray="2 2"/>
+                    <circle cx="14" cy="32" r="3.8" fill="#d68a4a" stroke="#7a4828" stroke-width="0.4"/>
+                    <circle cx="26" cy="32" r="3.8" fill="#a35434" stroke="#7a4828" stroke-width="0.4"/>
+                    <circle cx="38" cy="32" r="3.8" fill="#e8b779" stroke="#7a4828" stroke-width="0.4"/>
+                    <circle class="bead-active" cx="50" cy="32" r="4.4" fill="var(--gold)"/>
+                    <circle cx="62" cy="32" r="3.4" fill="none" stroke="var(--text-muted)" stroke-width="0.8" stroke-dasharray="1.5 1.5"/>
+                    <circle cx="74" cy="32" r="3.4" fill="none" stroke="var(--text-muted)" stroke-width="0.8" stroke-dasharray="1.5 1.5"/>
+                    {# Loose beads waiting #}
+                    <circle cx="18" cy="58" r="3" fill="#7a4828" opacity="0.65"/>
+                    <circle cx="30" cy="62" r="3" fill="#e8b779" opacity="0.65"/>
+                    <circle cx="42" cy="58" r="3" fill="#c79665" opacity="0.65"/>
+                    <circle cx="54" cy="62" r="3" fill="#a35434" opacity="0.65"/>
+                    <circle cx="66" cy="58" r="3" fill="#5e7a5b" opacity="0.65"/>
+                    {# Progress bar #}
+                    <rect x="10" y="82" width="72" height="7" rx="3.5" fill="var(--primary-50)"/>
+                    <rect class="progress-fill" x="10" y="82" width="72" height="7" rx="3.5" fill="var(--gold)"/>
+                    {# Stage name + active dot #}
+                    <text x="46" y="115" text-anchor="middle"
+                          style="font-family:Georgia,serif; font-size:10px; font-weight:600; fill:var(--text);">8 / 12 strung</text>
+                    <text x="46" y="128" text-anchor="middle"
+                          style="font-family:Georgia,serif; font-style:italic; font-size:9px; fill:var(--gold);">in progress</text>
+                </g>
 
-                {# View project button #}
-                <rect class="ui-button" x="266" y="158" width="52" height="26" rx="6"/>
-                <text class="ui-button-text" x="278" y="175" style="font-size:9px;">View →</text>
+                {# Arrow stage 2 -> stage 3 #}
+                <path class="flow-arrow" d="M 230 110 L 246 110"
+                      stroke="var(--text-muted)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M 242 106 L 246 110 L 242 114"
+                      stroke="var(--text-muted)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+                {# Stage 3: Finished bracelet (with optional glow on hover) #}
+                <g class="stage stage-3" transform="translate(248, 38)">
+                    {# Subtle glow that appears on hover #}
+                    <ellipse class="stage-3-glow" cx="46" cy="62" rx="44" ry="34" fill="var(--gold)" opacity="0.18"/>
+                    <rect width="92" height="138" rx="3" fill="#fff" stroke="var(--border)" stroke-width="1"
+                          filter="drop-shadow(0 3px 6px rgba(0,0,0,0.08))"/>
+                    {# Closed-loop bracelet of beads #}
+                    <g transform="translate(46, 62)">
+                        <circle cx="0" cy="0" r="22" fill="none" stroke="#8a6557" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5"/>
+                        <circle cx="22" cy="0" r="3.8" fill="#d68a4a" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="15.6" cy="-15.6" r="3.8" fill="#a35434" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="0" cy="-22" r="3.8" fill="#e8b779" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="-15.6" cy="-15.6" r="3.8" fill="#c79665" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="-22" cy="0" r="3.8" fill="#7a4828" stroke="#3a2418" stroke-width="0.4"/>
+                        <circle cx="-15.6" cy="15.6" r="3.8" fill="#d68a4a" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="0" cy="22" r="3.8" fill="#a35434" stroke="#7a4828" stroke-width="0.4"/>
+                        <circle cx="15.6" cy="15.6" r="3.8" fill="#e8b779" stroke="#7a4828" stroke-width="0.4"/>
+                    </g>
+                    <text x="46" y="115" text-anchor="middle"
+                          style="font-family:Georgia,serif; font-size:10px; font-weight:600; fill:var(--text);">Complete</text>
+                    {# Empty waiting circle that turns gold once stage-3 is reached #}
+                    <circle cx="46" cy="128" r="5" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1"/>
+                </g>
             </svg>
         </div>
         <div class="row-label">
@@ -469,53 +557,116 @@
     <a href="/purchase/" class="launch-row {% if purchase_alert %}alert{% endif %}" aria-label="Purchase — reorder and Temu pipeline">
         <div class="row-illus">
             <svg class="illus illus-purchase" viewBox="0 0 360 220" aria-hidden="true">
-                <rect class="ui-card-shadow" x="22" y="22" width="316" height="180" rx="10"/>
-                <rect class="ui-card" x="18" y="18" width="316" height="180" rx="10"/>
+                <rect x="0" y="0" width="360" height="220" fill="var(--surface)"/>
+                <path d="M 0 175 L 360 175 L 360 220 L 0 220 Z" fill="#e8d9bf" opacity="0.30"/>
 
-                {# Header #}
-                <text class="ui-brand" x="34" y="44" style="font-size:13px; font-weight:600;">Reorder candidates</text>
-                <rect x="240" y="32" width="80" height="20" rx="10" fill="var(--alert-bg)"/>
-                <text x="252" y="46" style="font-family:system-ui,sans-serif; font-size:9px; font-weight:600; fill:var(--alert);">18 to order</text>
-
-                {# Divider #}
-                <line x1="34" y1="62" x2="318" y2="62" stroke="var(--border)" stroke-width="1"/>
-
-                {# Line items — three of them, with bead swatch + name + count + parcel icon #}
-                <g class="po-line" transform="translate(0, 76)">
-                    <circle cx="44" cy="0" r="6" fill="#a35434"/>
-                    <rect class="ui-text" x="56" y="-4" width="120" height="3" rx="1.5"/>
-                    <rect class="ui-text" x="56" y="3" width="80" height="3" rx="1.5" opacity="0.6"/>
-                    <text class="ui-brand" x="220" y="3" style="font-size:11px; font-weight:600;">×&nbsp;6&nbsp;packs</text>
-                    <text x="290" y="3" style="font-family:system-ui,sans-serif; font-size:9px; fill:var(--text-muted);">R 240</text>
+                {# Wrapped parcel on the left (twine bow we kept from before) #}
+                <g transform="translate(20, 75)">
+                    {# Box body #}
+                    <rect x="0" y="0" width="62" height="62" rx="3" fill="#c79665" stroke="#7a4828" stroke-width="0.9"/>
+                    {# Twine wrap #}
+                    <line x1="31" y1="-7" x2="31" y2="62" stroke="#3a2418" stroke-width="1.1"/>
+                    <line x1="0" y1="31" x2="62" y2="31" stroke="#3a2418" stroke-width="1.1"/>
+                    {# Bow — flatter, with knot rectangle and streamer tails #}
+                    <g class="parcel-bow">
+                        <ellipse cx="22" cy="-3" rx="6.5" ry="3.2" fill="var(--gold)" transform="rotate(-12 22 -3)"/>
+                        <ellipse cx="40" cy="-3" rx="6.5" ry="3.2" fill="var(--gold)" transform="rotate(12 40 -3)"/>
+                        <rect x="28.4" y="-5.4" width="3.4" height="5.0" rx="0.8" fill="var(--gold)"/>
+                        <path d="M 28 1 Q 26 5 26.5 9" stroke="var(--gold)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M 32 1 Q 34 5 33.5 9" stroke="var(--gold)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    </g>
+                    {# Tag tied to twine #}
+                    <line x1="31" y1="62" x2="42" y2="78" stroke="#7a4828" stroke-width="0.6"/>
+                    <rect x="36" y="76" width="32" height="22" rx="2" fill="#faf3e0" stroke="var(--text-muted)" stroke-width="0.8" transform="rotate(8 36 76)"/>
                 </g>
 
-                <g class="po-line" transform="translate(0, 102)">
-                    <circle cx="44" cy="0" r="6" fill="#c79665"/>
-                    <rect class="ui-text" x="56" y="-4" width="100" height="3" rx="1.5"/>
-                    <rect class="ui-text" x="56" y="3" width="90" height="3" rx="1.5" opacity="0.6"/>
-                    <text class="ui-brand" x="220" y="3" style="font-size:11px; font-weight:600;">×&nbsp;12&nbsp;packs</text>
-                    <text x="290" y="3" style="font-family:system-ui,sans-serif; font-size:9px; fill:var(--text-muted);">R 480</text>
+                {# Open crate, centre — the storyteller of "supplies arrive" #}
+                <g transform="translate(115, 60)">
+                    {# Lid (hinged, opens up on hover) #}
+                    <g class="crate-lid">
+                        <rect x="-5" y="-2" width="170" height="14" rx="3" fill="#5e3e26" stroke="#3a2418" stroke-width="1"/>
+                        <line x1="0" y1="5" x2="160" y2="5" stroke="#8a5d39" opacity="0.55" stroke-width="0.8"/>
+                        {# Stamp on lid #}
+                        <circle cx="20" cy="5" r="4" fill="none" stroke="var(--gold)" stroke-width="0.9"/>
+                        <text x="20" y="7.5" text-anchor="middle"
+                              style="font-family:Georgia,serif; font-style:italic; font-size:5px; fill:var(--gold);">★</text>
+                    </g>
+                    {# Crate body #}
+                    <rect x="0" y="12" width="160" height="100" rx="4" fill="#8a5d39" stroke="#3a2418" stroke-width="1"/>
+                    <line x1="0" y1="42" x2="160" y2="42" stroke="#3a2418" opacity="0.35" stroke-width="0.8"/>
+                    <line x1="0" y1="78" x2="160" y2="78" stroke="#3a2418" opacity="0.35" stroke-width="0.8"/>
+                    {# Cream interior #}
+                    <rect x="6" y="18" width="148" height="88" rx="2" fill="#faf3e0" opacity="0.92"/>
+
+                    {# Bead packets stacked inside #}
+                    {# Packet 1 — orange beads #}
+                    <g transform="translate(14, 26)">
+                        <rect width="38" height="42" rx="2" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <circle cx="9" cy="14" r="3" fill="#d68a4a"/><circle cx="19" cy="14" r="3" fill="#d68a4a"/><circle cx="29" cy="14" r="3" fill="#d68a4a"/>
+                        <circle cx="9" cy="24" r="3" fill="#d68a4a"/><circle cx="19" cy="24" r="3" fill="#d68a4a"/><circle cx="29" cy="24" r="3" fill="#d68a4a"/>
+                        <line x1="6" y1="34" x2="32" y2="34" stroke="var(--text-muted)" stroke-width="0.4"/>
+                    </g>
+                    {# Packet 2 — coral beads (tilted slightly behind) #}
+                    <g transform="translate(56, 22) rotate(2 19 21)">
+                        <rect width="38" height="42" rx="2" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <circle cx="9" cy="14" r="3" fill="#a35434"/><circle cx="19" cy="14" r="3" fill="#a35434"/><circle cx="29" cy="14" r="3" fill="#a35434"/>
+                        <circle cx="9" cy="24" r="3" fill="#a35434"/><circle cx="19" cy="24" r="3" fill="#a35434"/><circle cx="29" cy="24" r="3" fill="#a35434"/>
+                        <line x1="6" y1="34" x2="32" y2="34" stroke="var(--text-muted)" stroke-width="0.4"/>
+                    </g>
+                    {# Packet 3 — amber beads (this is the one that pops up on hover) #}
+                    <g class="popping-packet" transform="translate(100, 26)">
+                        <rect width="38" height="42" rx="2" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <circle cx="9" cy="14" r="3" fill="#e8b779"/><circle cx="19" cy="14" r="3" fill="#e8b779"/><circle cx="29" cy="14" r="3" fill="#e8b779"/>
+                        <circle cx="9" cy="24" r="3" fill="#e8b779"/><circle cx="19" cy="24" r="3" fill="#e8b779"/><circle cx="29" cy="24" r="3" fill="#e8b779"/>
+                        <line x1="6" y1="34" x2="32" y2="34" stroke="var(--text-muted)" stroke-width="0.4"/>
+                    </g>
+
+                    {# Twine spool (lower-left of crate interior) #}
+                    <g transform="translate(34, 86)">
+                        <ellipse cx="0" cy="0" rx="14" ry="5" fill="#c89759" stroke="#7a4828" stroke-width="0.6"/>
+                        <ellipse cx="0" cy="0" rx="9" ry="3" fill="none" stroke="#7a4828" stroke-width="0.4"/>
+                        <line x1="-14" y1="-3" x2="-14" y2="3" stroke="#7a4828" stroke-width="0.4"/>
+                    </g>
+                    {# Loose beads spilled at lower-right of crate #}
+                    <circle cx="100" cy="84" r="3" fill="#7a4828"/>
+                    <circle cx="108" cy="90" r="3" fill="#c79665"/>
+                    <circle cx="120" cy="86" r="3.4" fill="#d68a4a"/>
+                    <circle cx="128" cy="94" r="3" fill="#a35434"/>
+                    <circle cx="115" cy="98" r="3.2" fill="#e8b779"/>
                 </g>
 
-                <g class="po-line" transform="translate(0, 128)">
-                    <circle cx="44" cy="0" r="6" fill="#7a4828"/>
-                    <rect class="ui-text" x="56" y="-4" width="115" height="3" rx="1.5"/>
-                    <rect class="ui-text" x="56" y="3" width="70" height="3" rx="1.5" opacity="0.6"/>
-                    <text class="ui-brand" x="220" y="3" style="font-size:11px; font-weight:600;">×&nbsp;4&nbsp;packs</text>
-                    <text x="290" y="3" style="font-family:system-ui,sans-serif; font-size:9px; fill:var(--text-muted);">R 160</text>
-                </g>
-
-                {# Divider #}
-                <line x1="34" y1="148" x2="318" y2="148" stroke="var(--border)" stroke-width="1"/>
-
-                {# Footer: total + Temu button #}
-                <text class="ui-meta" x="34" y="168">SUBTOTAL</text>
-                <text class="ui-brand" x="34" y="184" style="font-size:14px; font-weight:600;">R 4,200.00</text>
-
-                <g class="temu-button">
-                    <rect x="216" y="158" width="102" height="30" rx="6" fill="var(--gold)"/>
-                    <text x="232" y="178" style="font-family:system-ui,sans-serif; font-size:10px; font-weight:600; fill:#fff;">Open in Temu</text>
-                    <path d="M 308 167 L 314 173 L 308 179" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                {# Clipboard with checklist on the right #}
+                <g transform="translate(290, 56)">
+                    <rect x="0" y="0" width="56" height="100" rx="3" fill="#5e3e26" stroke="#3a2418" stroke-width="0.8"/>
+                    <rect x="3" y="3" width="50" height="94" rx="2" fill="#faf3e0"/>
+                    {# Clip on top #}
+                    <rect x="20" y="-6" width="16" height="10" rx="2" fill="#8a5d39"/>
+                    {# Heading #}
+                    <text x="9" y="14" style="font-family:Georgia,serif; font-style:italic; font-size:7px; fill:var(--text);">incoming</text>
+                    <line x1="6" y1="18" x2="48" y2="18" stroke="var(--gold)" stroke-width="0.5"/>
+                    {# Checklist items — checked then unchecked #}
+                    <g transform="translate(8, 26)">
+                        <rect width="6" height="6" rx="1" fill="var(--success)" stroke="var(--text-muted)" stroke-width="0.4"/>
+                        <path d="M 1.5 3 L 2.5 4 L 4.5 2" stroke="#fff" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="9" y1="3" x2="40" y2="3" stroke="var(--text-muted)" stroke-width="0.5"/>
+                    </g>
+                    <g transform="translate(8, 38)">
+                        <rect width="6" height="6" rx="1" fill="var(--success)" stroke="var(--text-muted)" stroke-width="0.4"/>
+                        <path d="M 1.5 3 L 2.5 4 L 4.5 2" stroke="#fff" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="9" y1="3" x2="38" y2="3" stroke="var(--text-muted)" stroke-width="0.5"/>
+                    </g>
+                    <g transform="translate(8, 50)">
+                        <rect width="6" height="6" rx="1" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <line x1="9" y1="3" x2="42" y2="3" stroke="var(--text-muted)" stroke-width="0.5"/>
+                    </g>
+                    <g transform="translate(8, 62)">
+                        <rect width="6" height="6" rx="1" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <line x1="9" y1="3" x2="36" y2="3" stroke="var(--text-muted)" stroke-width="0.5"/>
+                    </g>
+                    <g transform="translate(8, 74)">
+                        <rect width="6" height="6" rx="1" fill="#fff" stroke="var(--text-muted)" stroke-width="0.6"/>
+                        <line x1="9" y1="3" x2="40" y2="3" stroke="var(--text-muted)" stroke-width="0.5"/>
+                    </g>
                 </g>
             </svg>
         </div>
@@ -544,62 +695,120 @@
     <a href="/data/" class="launch-row" aria-label="Data — export, import and change log">
         <div class="row-illus">
             <svg class="illus illus-data" viewBox="0 0 360 220" aria-hidden="true">
-                <rect class="ui-card-shadow" x="22" y="22" width="316" height="180" rx="10"/>
-                <rect class="ui-card" x="18" y="18" width="316" height="180" rx="10"/>
+                <rect x="0" y="0" width="360" height="220" fill="var(--surface)"/>
+                {# Subtle desk surface #}
+                <path d="M 0 175 L 360 175 L 360 220 L 0 220 Z" fill="#e8d9bf" opacity="0.30"/>
 
-                {# Header #}
-                <text class="ui-brand" x="34" y="44" style="font-size:13px; font-weight:600;">MasterData_v5.xlsx</text>
-                <text class="ui-meta" x="34" y="58">81 materials · 1,477 BOM lines</text>
+                {# Open ledger book — centred, two-page spread #}
+                <g transform="translate(40, 30)">
+                    {# Subtle book shadow on the desk #}
+                    <ellipse cx="140" cy="155" rx="130" ry="6" fill="rgba(0,0,0,0.10)"/>
+                    {# Leather cover (dark frame around the open spread) #}
+                    <path d="M 0 8 Q 0 4 4 4 L 276 4 Q 280 4 280 8 L 280 152 Q 280 156 276 156 L 4 156 Q 0 156 0 152 Z"
+                          fill="#3a2418" stroke="#1a1a18" stroke-width="0.8"/>
+                    {# Decorative gold trim line on cover #}
+                    <rect x="6" y="10" width="268" height="140" rx="2" fill="none"
+                          stroke="var(--gold)" stroke-width="0.7" opacity="0.55"/>
 
-                {# Spreadsheet header row #}
-                <rect x="34" y="72" width="284" height="20" rx="3" fill="var(--primary)"/>
-                <text class="ui-meta" x="46" y="86" style="fill:var(--surface); font-weight:600; font-size:8px;">SKU</text>
-                <text class="ui-meta" x="120" y="86" style="fill:var(--surface); font-weight:600; font-size:8px;">NAME</text>
-                <text class="ui-meta" x="200" y="86" style="fill:var(--surface); font-weight:600; font-size:8px;">PACK</text>
-                <text class="ui-meta" x="245" y="86" style="fill:var(--surface); font-weight:600; font-size:8px;">COST</text>
-                <text class="ui-meta" x="285" y="86" style="fill:var(--surface); font-weight:600; font-size:8px;">STOCK</text>
+                    {# Cream pages, left + right #}
+                    <path d="M 8 10 Q 8 6 12 6 L 138 6 L 138 154 L 12 154 Q 8 154 8 150 Z"
+                          fill="#faf3e0" stroke="#d8d3c3" stroke-width="0.5"/>
+                    <path d="M 142 6 L 268 6 Q 272 6 272 10 L 272 150 Q 272 154 268 154 L 142 154 Z"
+                          fill="#faf3e0" stroke="#d8d3c3" stroke-width="0.5"/>
+                    {# Spine groove #}
+                    <line x1="140" y1="6" x2="140" y2="154" stroke="#3a2418" stroke-width="0.8" opacity="0.4"/>
 
-                {# Spreadsheet rows — placeholders shown as small bars per cell #}
-                <rect class="ss-row" x="34" y="92" width="284" height="18" fill="var(--surface)"/>
-                <line x1="34" y1="110" x2="318" y2="110" stroke="var(--border)" stroke-width="0.5"/>
-                <rect x="46" y="100" width="55" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
-                <rect x="120" y="100" width="60" height="3" rx="1" fill="var(--text-muted)" opacity="0.45"/>
-                <rect x="200" y="100" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="245" y="100" width="28" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="285" y="100" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
+                    {# LEFT PAGE — Bead studies (each row: a hand-drawn bead + label line) #}
+                    <g transform="translate(20, 18)">
+                        <text x="0" y="0" style="font-family:Georgia,serif; font-style:italic; font-size:9px; fill:var(--text-muted);">Bead studies</text>
+                        <line x1="0" y1="6" x2="100" y2="6" stroke="var(--gold)" stroke-width="0.6"/>
 
-                <rect class="ss-row" x="34" y="110" width="284" height="18" fill="var(--surface-2)"/>
-                <line x1="34" y1="128" x2="318" y2="128" stroke="var(--border)" stroke-width="0.5"/>
-                <rect x="46" y="118" width="60" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
-                <rect x="120" y="118" width="55" height="3" rx="1" fill="var(--text-muted)" opacity="0.45"/>
-                <rect x="200" y="118" width="20" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="245" y="118" width="30" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="285" y="118" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
+                        <circle cx="10" cy="22" r="6" fill="#d68a4a" stroke="#7a4828" stroke-width="0.5"/>
+                        <line x1="22" y1="22" x2="80" y2="22" stroke="var(--text-muted)" stroke-width="0.5"/>
+                        <line x1="22" y1="27" x2="65" y2="27" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.55"/>
 
-                <rect class="ss-row" x="34" y="128" width="284" height="18" fill="var(--surface)"/>
-                <line x1="34" y1="146" x2="318" y2="146" stroke="var(--border)" stroke-width="0.5"/>
-                <rect x="46" y="136" width="50" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
-                <rect x="120" y="136" width="65" height="3" rx="1" fill="var(--text-muted)" opacity="0.45"/>
-                <rect x="200" y="136" width="24" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="245" y="136" width="26" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="285" y="136" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
+                        <circle cx="10" cy="46" r="7" fill="#a35434" stroke="#7a4828" stroke-width="0.5"/>
+                        <line x1="22" y1="46" x2="78" y2="46" stroke="var(--text-muted)" stroke-width="0.5"/>
+                        <line x1="22" y1="51" x2="62" y2="51" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.55"/>
 
-                <rect class="ss-row" x="34" y="146" width="284" height="18" fill="var(--surface-2)"/>
-                <rect x="46" y="154" width="58" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
-                <rect x="120" y="154" width="50" height="3" rx="1" fill="var(--text-muted)" opacity="0.45"/>
-                <rect x="200" y="154" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="245" y="154" width="30" height="3" rx="1" fill="var(--text-muted)" opacity="0.55"/>
-                <rect x="285" y="154" width="22" height="3" rx="1" fill="var(--text-muted)" opacity="0.65"/>
+                        <circle cx="10" cy="72" r="6" fill="#e8b779" stroke="#7a4828" stroke-width="0.5"/>
+                        <line x1="22" y1="72" x2="82" y2="72" stroke="var(--text-muted)" stroke-width="0.5"/>
+                        <line x1="22" y1="77" x2="60" y2="77" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.55"/>
 
-                {# Footer: change badge + export button #}
-                <rect x="34" y="172" width="120" height="22" rx="11" fill="var(--gold)" opacity="0.18"/>
-                <circle cx="46" cy="183" r="3" fill="var(--gold)"/>
-                <text x="56" y="187" style="font-family:system-ui,sans-serif; font-size:9px; font-weight:600; fill:var(--gold);">+3 changes today</text>
+                        <circle cx="10" cy="98" r="6.5" fill="#7a4828" stroke="#3a2418" stroke-width="0.5"/>
+                        <line x1="22" y1="98" x2="76" y2="98" stroke="var(--text-muted)" stroke-width="0.5"/>
+                        <line x1="22" y1="103" x2="68" y2="103" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.55"/>
 
-                <g class="export-button">
-                    <rect class="ui-button" x="252" y="170" width="66" height="26" rx="6"/>
-                    <path d="M 263 178 L 263 188 M 259 184 L 263 188 L 267 184" fill="none" stroke="var(--surface)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <text class="ui-button-text" x="272" y="187">Export</text>
+                        <circle cx="10" cy="124" r="6" fill="#c79665" stroke="#7a4828" stroke-width="0.5"/>
+                        <line x1="22" y1="124" x2="84" y2="124" stroke="var(--text-muted)" stroke-width="0.5"/>
+                        <line x1="22" y1="129" x2="58" y2="129" stroke="var(--text-muted)" stroke-width="0.5" opacity="0.55"/>
+                    </g>
+
+                    {# RIGHT PAGE — Design recipes (palette name + bead row + line) #}
+                    <g transform="translate(150, 18)">
+                        <text x="0" y="0" style="font-family:Georgia,serif; font-style:italic; font-size:9px; fill:var(--text-muted);">Design recipes</text>
+                        <line x1="0" y1="6" x2="100" y2="6" stroke="var(--gold)" stroke-width="0.6"/>
+
+                        <text x="0" y="22" style="font-family:Georgia,serif; font-size:9px; font-weight:600; fill:var(--text);">SBR01 — Tangerine</text>
+                        <g transform="translate(2, 30)">
+                            <circle cx="0" cy="0" r="2.5" fill="#d68a4a"/>
+                            <circle cx="8" cy="0" r="2.5" fill="#a35434"/>
+                            <circle cx="16" cy="0" r="2.5" fill="#e8b779"/>
+                            <circle cx="24" cy="0" r="2.5" fill="#7a4828"/>
+                        </g>
+                        <line x1="0" y1="40" x2="100" y2="40" stroke="var(--text-muted)" stroke-width="0.3" opacity="0.4"/>
+
+                        <text x="0" y="56" style="font-family:Georgia,serif; font-size:9px; font-weight:600; fill:var(--text);">SBR02 — Magenta</text>
+                        <g transform="translate(2, 64)">
+                            <circle cx="0" cy="0" r="2.5" fill="#b04848"/>
+                            <circle cx="8" cy="0" r="2.5" fill="#a35434"/>
+                            <circle cx="16" cy="0" r="2.5" fill="#c89759"/>
+                        </g>
+                        <line x1="0" y1="74" x2="100" y2="74" stroke="var(--text-muted)" stroke-width="0.3" opacity="0.4"/>
+
+                        <text x="0" y="90" style="font-family:Georgia,serif; font-size:9px; font-weight:600; fill:var(--text);">SBR03 — Sage</text>
+                        <g transform="translate(2, 98)">
+                            <circle cx="0" cy="0" r="2.5" fill="#5e7a5b"/>
+                            <circle cx="8" cy="0" r="2.5" fill="#7a9572"/>
+                            <circle cx="16" cy="0" r="2.5" fill="#c79665"/>
+                        </g>
+                        <line x1="0" y1="108" x2="100" y2="108" stroke="var(--text-muted)" stroke-width="0.3" opacity="0.4"/>
+
+                        <text x="0" y="124" style="font-family:Georgia,serif; font-size:9px; font-weight:600; fill:var(--text);">SBR04 — Teal</text>
+                        <g transform="translate(2, 132)">
+                            <circle cx="0" cy="0" r="2.5" fill="#3e7e8c"/>
+                            <circle cx="8" cy="0" r="2.5" fill="#5e7a5b"/>
+                        </g>
+                    </g>
+
+                    {# Page corner that curls on hover (right page) #}
+                    <g class="page-corner">
+                        <path d="M 268 154 L 252 154 L 268 138 Z"
+                              fill="#e8d9bf" stroke="#d8d3c3" stroke-width="0.5"/>
+                    </g>
+                </g>
+
+                {# Satin ribbon bookmark hanging from the top of the book #}
+                <g class="ribbon-target">
+                    <path d="M 270 30 L 270 200 L 264 192 L 258 200 L 258 30 Z" fill="var(--gold)" opacity="0.85"/>
+                    <line x1="264" y1="32" x2="264" y2="195" stroke="#7a4828" opacity="0.4" stroke-width="0.4"/>
+                </g>
+
+                {# Wax seal on the bottom-right of the open book #}
+                <g class="wax-seal-target" transform="translate(295, 168)">
+                    <circle cx="0" cy="0" r="9" fill="#a8392a" stroke="#7a2820" stroke-width="0.6"/>
+                    <path d="M 0 -4.5 L 1.5 -1.5 L 4.5 -1 L 2 1.5 L 2.5 5 L 0 3 L -2.5 5 L -2 1.5 L -4.5 -1 L -1.5 -1.5 Z"
+                          fill="#7a2820"/>
+                </g>
+
+                {# Pencil resting on the left page #}
+                <g class="pencil-target">
+                    <g transform="translate(108, 145) rotate(-22)">
+                        <rect x="0" y="0" width="50" height="4" rx="0.5" fill="#c89759"/>
+                        <rect x="44" y="0" width="6" height="4" rx="0.5" fill="#5e3e26"/>
+                        <polygon points="50,0 56,2 50,4" fill="#3a2418"/>
+                        <line x1="2" y1="2" x2="42" y2="2" stroke="#7a4828" stroke-width="0.4" opacity="0.5"/>
+                    </g>
                 </g>
             </svg>
         </div>
