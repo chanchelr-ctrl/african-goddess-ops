@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#9c6b4f"/>
-  <circle cx="28" cy="32" r="17" fill="#f7efe1"/>
-  <circle cx="36" cy="29" r="17" fill="#9c6b4f"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <!-- Bead body — warm clay terracotta -->
+    <circle cx="50" cy="50" r="46" fill="#a85a3a"/>
+    <!-- Deep-umber ring giving the bead dimension -->
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#6f3a23" stroke-width="3"/>
+    <!-- Ochre highlight arc, top-left, for the glossy bead feel -->
+    <path d="M 18 32 Q 32 16 52 16" fill="none" stroke="#d8a050"
+          stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+    <!-- AG monogram, cream parchment, bold serif -->
+    <text x="50" y="64" text-anchor="middle"
+          font-family="Georgia, 'Times New Roman', serif"
+          font-size="40" font-weight="700"
+          fill="#f5ecd9" letter-spacing="-1">AG</text>
 </svg>
