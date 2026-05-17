@@ -23,8 +23,19 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() == "true"
 # Tersia ever wants LAN access from a phone.
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
-# CSRF: explicit trusted origins for the local dev server
-CSRF_TRUSTED_ORIGINS = [f"http://{h}:8000" for h in ALLOWED_HOSTS]
+# CSRF + secure-cookie behaviour. Production deployments (e.g. behind a
+# PythonAnywhere / nginx HTTPS proxy) set DJANGO_CSRF_TRUSTED_ORIGINS to a
+# comma-separated list of `https://host` entries; that switches us into
+# HTTPS-aware mode (trust the proxy's forwarded-proto header + mark cookies
+# as secure). Local dev keeps the http://host:8000 fallback.
+_csrf_env = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").strip()
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [s.strip() for s in _csrf_env.split(",") if s.strip()]
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    CSRF_TRUSTED_ORIGINS = [f"http://{h}:8000" for h in ALLOWED_HOSTS]
 
 # --- Apps -------------------------------------------------------------------
 
