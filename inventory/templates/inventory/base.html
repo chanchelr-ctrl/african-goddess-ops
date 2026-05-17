@@ -241,12 +241,12 @@
             </a>
             <div class="hero-meta">
                 <div>{% now "l, j F Y" %}</div>
+                {% if request.user.is_authenticated %}
                 <div style="margin-top:4px;">
                     <a href="/admin/">Admin</a>
                     <span style="margin:0 6px; opacity:.4;">·</span>
                     <a href="/admin/logout/">Sign out</a>
                 </div>
-                {% if request.user.is_authenticated %}
                 <div style="margin-top:4px; opacity:.75; font-size:0.78rem;">
                     Signed in as <strong>{{ request.user.username }}</strong>
                 </div>
@@ -255,6 +255,7 @@
         </div>
     </header>
 
+    {% if request.user.is_authenticated %}
     <nav class="topnav">
         <div class="topnav-inner">
             <a href="/" class="{% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
@@ -264,6 +265,7 @@
             <a href="/data/" class="{% if active == 'data' %}active{% endif %}">Data</a>
         </div>
     </nav>
+    {% endif %}
 
     <main class="page">
         {% if messages %}

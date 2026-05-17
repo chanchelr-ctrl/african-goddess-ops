@@ -1,0 +1,162 @@
+{% extends "inventory/base.html" %}
+{% block title %}Sign in — African Goddess Operations{% endblock %}
+
+{% block extra_head %}
+<style>
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 60vh;
+        padding-top: 3rem;
+    }
+    .login-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow-md);
+        padding: 2.5rem 2.25rem;
+        width: 100%;
+        max-width: 420px;
+    }
+    .login-card .crest {
+        display: flex; justify-content: center; margin-bottom: 1.2rem;
+    }
+    .login-card .crest svg { width: 60px; height: 60px; }
+    .login-card h1 {
+        font-family: Georgia, serif;
+        font-size: 1.65rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        margin: 0 0 0.4rem;
+        color: var(--text);
+        text-align: center;
+    }
+    .login-card .tagline {
+        color: var(--text-muted);
+        font-style: italic;
+        font-family: Georgia, serif;
+        margin: 0 0 1.75rem;
+        font-size: 0.95rem;
+        text-align: center;
+    }
+    .login-form .form-row { margin-bottom: 1.1rem; }
+    .login-form label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: var(--text-muted);
+        margin-bottom: 0.35rem;
+    }
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+        width: 100%;
+        max-width: 100%;
+        padding: 0.7rem 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: var(--surface);
+        color: var(--text);
+        font-family: inherit;
+    }
+    .login-form input:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: -1px;
+        border-color: var(--primary);
+    }
+    .login-form .form-actions {
+        margin-top: 1.5rem;
+    }
+    .login-form .form-actions .btn {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.4px;
+    }
+    .login-error {
+        background: var(--alert-bg);
+        border: 1px solid var(--alert);
+        color: var(--alert);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+    }
+    .field-error {
+        color: var(--alert);
+        font-size: 0.78rem;
+        margin-top: 0.3rem;
+        display: block;
+    }
+    .login-flourish {
+        text-align: center;
+        margin-top: 1.6rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+        font-family: Georgia, serif;
+        font-style: italic;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="crest" aria-hidden="true">
+            <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="46" fill="#a85a3a"/>
+                <circle cx="50" cy="50" r="46" fill="none" stroke="#6f3a23" stroke-width="3"/>
+                <path d="M 18 32 Q 32 16 52 16" fill="none" stroke="#d8a050"
+                      stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+                <text x="50" y="64" text-anchor="middle"
+                      font-family="Georgia, 'Times New Roman', serif"
+                      font-size="40" font-weight="700"
+                      fill="#f5ecd9" letter-spacing="-1">AG</text>
+            </svg>
+        </div>
+
+        <h1>Welcome back</h1>
+        <p class="tagline">Sign in to African Goddess Operations</p>
+
+        {% if form.non_field_errors %}
+        <div class="login-error">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="login-form" action="">
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+            <div class="form-row">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" id="id_username"
+                       autocomplete="username" autofocus required>
+                {% if form.username.errors %}
+                <small class="field-error">{{ form.username.errors|join:" " }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" id="id_password"
+                       autocomplete="current-password" required>
+                {% if form.password.errors %}
+                <small class="field-error">{{ form.password.errors|join:" " }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn">Sign in →</button>
+            </div>
+        </form>
+
+        <div class="login-flourish">"Sacred Tools For Sacred Times"</div>
+    </div>
+</div>
+{% endblock %}
