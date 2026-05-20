@@ -4,10 +4,12 @@
 
 ## Daily start
 
-1. Double-click **`start.bat`** in the project folder. A black PowerShell window opens. **Leave it open while you work.**
-2. Your browser opens at `http://127.0.0.1:8000/`. If not, type that into the browser yourself.
-3. Sign in. The home page is the **launchpad** — four big workflow rows: **Build · Track · Purchase · Data**. Click anywhere on a row to enter that workflow.
-4. When you're done, close the browser tab. To shut down the app fully, close the black window.
+1. Open your browser (Safari, Chrome, Firefox — whichever you prefer) and go to **https://chanchelr.pythonanywhere.com**. Bookmark it so it's a single click next time.
+2. Sign in. Your username is `tersia`. Use the password your consultant gave you. (If you forget it, ask the consultant to reset it — don't try to reset from the login page.)
+3. The home page is the **launchpad** — four big workflow rows: **Build · Track · Purchase · Data**. Click anywhere on a row to enter that workflow.
+4. When you're done, just close the browser tab. The app keeps running on its own server — there's nothing to "shut down".
+
+> **First visit after a quiet day?** The app sleeps when no one's using it and takes a few seconds to wake up on the first click. Subsequent clicks are instant.
 
 ## Reading the launchpad
 
@@ -23,8 +25,6 @@ Click anywhere on a row (the illustration, the label, the KPI tiles, or the chev
 ## All numbers display as whole numbers
 
 Throughout the app, quantities, stock counts and ZAR values render as whole integers (no trailing decimals). The underlying data keeps full precision; you just see the clean round version on screen.
-
-> **Why `.bat` and not `.ps1`?** Windows blocks unsigned PowerShell scripts by default for safety. The `.bat` files are tiny wrappers that launch the real `.ps1` scripts with permission to run. You can ignore the technicality — just double-click `start.bat`.
 
 ## The 7 things you'll do most
 
@@ -160,17 +160,6 @@ Every change applied by the import is recorded in the **ChangeLog**, attributed 
 
 The database wins on conflict: the .xlsx you downloaded is a point-in-time snapshot. To see fresh figures, click Download again.
 
-## Bulk import from the original spreadsheets
-
-The app shipped with a one-shot importer that reads the client's original 3-file spreadsheet format and bootstraps the database. This is intended only for first-time setup or full re-imports.
-
-```powershell
-.\.venv\Scripts\python.exe manage.py migrate_bom_xlsx --dry-run
-.\.venv\Scripts\python.exe manage.py migrate_bom_xlsx --with-initial-stock
-```
-
-After the bootstrap, the **standard way to apply edits** is through the **Data → Import** button on the web app (using the MasterData.xlsx format from `Export`). That's safer, integrates with the change log, and round-trips cleanly.
-
 ## Data — Export & Import
 
 The app keeps everything in its database. The **Data** page (top menu → **Data**) lets you turn that into a single Excel file you can read, share, edit, or re-import.
@@ -209,14 +198,9 @@ The database wins. The .xlsx file you downloaded is a point-in-time snapshot —
 
 ## Backups
 
-Every day at 6pm (or whenever Task Scheduler is set), `backup.ps1` automatically copies your database to `backups\db_YYYY-MM-DD_HHMM.sqlite3`. The last 30 backups are kept; older ones are deleted automatically.
+Your database lives on the server — you don't manage backups yourself. Your consultant takes periodic copies and can restore from a recent one if something ever goes wrong. Just tell them what happened and when.
 
-To make a manual backup right now: double-click `backup.bat` in the project folder.
-
-To restore from a backup:
-1. Close the app (close the black PowerShell window).
-2. Rename the chosen backup file from `backups\db_2026-05-03_1800.sqlite3` to `db.sqlite3`, and move it to the project root (replacing the current `db.sqlite3`).
-3. Run `start.ps1` again.
+For your own snapshots — handy at month-end or before any big edit — use **Data → Download MasterData.xlsx**. That gives you a single Excel file with every material, every BOM line, and every recorded change. Save it locally; it's yours to keep.
 
 ## Common questions
 
@@ -233,7 +217,7 @@ A: Open the PO, change Status to "Cancelled," and Save. No stock side-effects.
 A: Purchase orders list → filter by Supplier → date range filter at the top.
 
 **Q: My stock numbers look weird. How do I check?**
-A: Open PowerShell in the project folder and run `.\.venv\Scripts\python.exe manage.py reconcile_stock`. It compares each material's current stock to the audit-trail sum and flags any discrepancies. Add `--fix` to recompute from the audit log.
+A: Send a screenshot to your consultant. They have a tool that compares each material's current stock to the audit-trail history and flags discrepancies — and a "recompute from audit log" lever if needed. This kind of repair should never be done from inside the app.
 
 **Q: I want to give my accountant the year's data.**
 A: From the **Data** page click **Download MasterData.xlsx**. That gives them a single Excel file with every raw material, every BOM line, and every recorded change. For PO and production-run reports, use the admin's filter & export options.
