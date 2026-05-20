@@ -29,7 +29,11 @@ from inventory.models import (
 # Expected ground truth from MasterData_v6.xlsx
 EXPECT_MATERIALS = 81
 EXPECT_PVS       = 60
-EXPECT_BOM_LINES = 1457  # if --prune was used; otherwise 1515 (= 1477 + 38)
+# 1457 TUSHY rows - 12 zero-qty rows (BT527369 hair extensions in SBA02/04/06
+# MULTI — 4 colour variants x 3 products) = 1445 BomLine rows after a clean
+# --prune import. Without --prune the count would be 1515 (= 1477 v5 + 38 new).
+EXPECT_BOM_LINES = 1445
+EXPECT_BOM_LINES_NO_PRUNE = 1515
 EXPECT_BRANDS    = {"African Goddess": 24, "Sugar Bush": 36}  # PV counts by brand
 
 # A) Lines that v6 ADDED — should be present in DB after import
@@ -101,15 +105,17 @@ def main():
                            f"actual {pvs}") else 1
 
     if bom == EXPECT_BOM_LINES:
-        check(f"BOM lines == {EXPECT_BOM_LINES} (prune was used)", True,
+        check(f"BOM lines == {EXPECT_BOM_LINES} (clean --prune import)", True,
               f"actual {bom}")
-    elif bom == 1515:
-        check(f"BOM lines == 1515 (prune NOT used; 58 stale lines remain)",
-              True, f"actual {bom} — re-import with --prune to clean")
+    elif bom == EXPECT_BOM_LINES_NO_PRUNE:
+        check(f"BOM lines == {EXPECT_BOM_LINES_NO_PRUNE} (prune NOT used; "
+              f"70 stale lines remain)", True,
+              f"actual {bom} — re-import with --prune to clean")
         failures += 1
     else:
         check(f"BOM lines in expected range", False,
-              f"actual {bom} (expected 1457 with prune, 1515 without)")
+              f"actual {bom} (expected {EXPECT_BOM_LINES} with prune, "
+              f"{EXPECT_BOM_LINES_NO_PRUNE} without)")
         failures += 1
 
     print(f"\n  Brands={brands}   Suppliers={suppliers}   "
