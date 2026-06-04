@@ -446,6 +446,122 @@ def purchase_draft_po(request):
 
 
 @login_required
+def purchase_new_po(request):
+    """Build a fresh PO by browsing the whole active catalogue. Set packs > 0
+    on any row to include it. Optional `?po=<pk>` query param appends lines to
+    an existing DRAFT PO instead of creating a new one."""
+    from django.db import transaction
+
+    append_pk = request.GET.get("po") or request.POST.get("po") or ""
+    append_po = None
+    if append_pk:
+        append_po = PurchaseOrder.objects.filter(pk=append_pk, status="DRAFT").first()
+        if not append_po:
+            messages.warning(request, "PO not found or no longer editable.")
+            return redirect("purchase")
+
+    if request.method == "POST":
+        sku_payload: dict[str, tuple[Decimal, Decimal, Decimal]] = {}
+        for k, v in request.POST.items():
+            if not k.startswith("packs_"):
+                continue
+            sku = k[len("packs_"):]
+            try:
+                packs = Decimal(v or "0")
+            except Exception:
+                packs = Decimal(0)
+            if packs <= 0:
+                continue
+            try:
+                cost = Decimal(request.POST.get(f"cost_{sku}", "0") or "0")
+            except Exception:
+                cost = Decimal(0)
+            try:
+                pack_size = Decimal(request.POST.get(f"size_{sku}", "1") or "1")
+            except Exception:
+                pack_size = Decimal(1)
+            sku_payload[sku] = (packs, cost, pack_size)
+
+        if not sku_payload:
+            messages.warning(request, "Nothing selected — set packs > 0 on at least one line.")
+            target = request.path + (f"?po={append_pk}" if append_pk else "")
+            return redirect(target)
+
+        with transaction.atomic():
+            if append_po:
+                po = append_po
+            else:
+                supplier_id = request.POST.get("supplier")
+                if supplier_id:
+                    supplier = get_object_or_404(Supplier, pk=supplier_id)
+                else:
+                    supplier, _ = Supplier.objects.get_or_create(name="Temu")
+                po = PurchaseOrder.objects.create(
+                    supplier=supplier,
+                    status="DRAFT",
+                    notes=(request.POST.get("notes", "") or "").strip(),
+                )
+
+            materials = RawMaterial.objects.filter(
+                sku__in=sku_payload.keys(), is_active=True
+            )
+            for m in materials:
+                packs, cost, pack_size = sku_payload[m.sku]
+                PurchaseOrderLine.objects.create(
+                    purchase_order=po,
+                    raw_material=m,
+                    pack_size=pack_size if pack_size > 0 else (m.pack_size or Decimal(1)),
+                    pack_count=packs,
+                    unit_cost=cost,
+                )
+
+        verb = "Added to" if append_po else "Created"
+        messages.success(
+            request, f"{verb} {po.reference} — {len(sku_payload)} line(s)."
+        )
+        return redirect("po_detail", pk=po.pk)
+
+    # GET — render the picker
+    materials_qs = (
+        RawMaterial.objects.filter(is_active=True)
+        .select_related("preferred_supplier")
+        .order_by("name")
+    )
+    existing_skus: set[str] = set()
+    if append_po:
+        existing_skus = set(
+            append_po.lines.values_list("raw_material__sku", flat=True)
+        )
+
+    enriched = []
+    for m in materials_qs:
+        enriched.append({
+            "material": m,
+            "category": _material_category(m),
+            "colour_family": _colour_family(m),
+            "stock_status": _stock_status(m),
+            "is_low": m.needs_reorder,
+            "suggest_packs": int(m.packs_to_purchase) if m.needs_reorder else 0,
+            "already_on_po": m.sku in existing_skus,
+        })
+
+    suppliers = Supplier.objects.order_by("name")
+    categories = sorted({e["category"] for e in enriched})
+    colours = sorted({e["colour_family"] for e in enriched if e["colour_family"]})
+
+    return render(request, "inventory/purchase_new_po.html", {
+        "materials": enriched,
+        "categories": categories,
+        "colours": colours,
+        "suppliers": suppliers,
+        "append_po": append_po,
+        "low_count": sum(1 for e in enriched if e["is_low"]),
+        "out_count": sum(1 for e in enriched if e["stock_status"] == "out"),
+        "total_count": len(enriched),
+    })
+
+
+@login_required
 def po_detail(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     lines = []
@@ -455,6 +571,129 @@ def po_detail(request, pk):
             "temu_url": temu_search_url(ln.raw_material),
         })
     return render(request, "inventory/po_detail.html", {"po": po, "lines": lines})
+
+
+@login_required
+def po_edit(request, pk):
+    """Edit an existing DRAFT PO — change pack count / pack size / unit cost
+    on each line, delete lines, edit notes + supplier. To add more materials
+    use the 'Add more items →' link which jumps to /purchase/new/?po=<pk>."""
+    from django.db import transaction
+
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    if po.status != "DRAFT":
+        messages.warning(
+            request,
+            f"Cannot edit a PO with status '{po.get_status_display()}'.",
+        )
+        return redirect("po_detail", pk=pk)
+
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+
+        if action == "delete_line":
+            line_id = request.POST.get("line_id")
+            deleted = PurchaseOrderLine.objects.filter(
+                purchase_order=po, pk=line_id
+            ).delete()
+            if deleted[0]:
+                messages.success(request, "Line removed.")
+            return redirect("po_edit", pk=pk)
+
+        if action == "add_line":
+            sku = (request.POST.get("new_sku") or "").strip()
+            try:
+                packs = Decimal(request.POST.get("new_packs") or "0")
+            except Exception:
+                packs = Decimal(0)
+            if not sku or packs <= 0:
+                messages.warning(
+                    request,
+                    "Pick a material and enter a pack count greater than zero.",
+                )
+                return redirect("po_edit", pk=pk)
+            m = RawMaterial.objects.filter(sku=sku, is_active=True).first()
+            if not m:
+                messages.warning(request, f"Material '{sku}' not found.")
+                return redirect("po_edit", pk=pk)
+            try:
+                cost = Decimal(
+                    request.POST.get("new_cost") or str(m.last_paid_unit_cost)
+                )
+            except Exception:
+                cost = m.last_paid_unit_cost
+            pack_size = m.pack_size if m.pack_size and m.pack_size > 0 else Decimal(1)
+            PurchaseOrderLine.objects.create(
+                purchase_order=po,
+                raw_material=m,
+                pack_size=pack_size,
+                pack_count=packs,
+                unit_cost=cost,
+            )
+            messages.success(request, f"Added {m.name}.")
+            return redirect("po_edit", pk=pk)
+
+        # action == "save" — apply bulk line edits + header changes
+        with transaction.atomic():
+            for line in list(po.lines.all()):
+                try:
+                    packs = Decimal(
+                        request.POST.get(f"packs_{line.pk}", str(line.pack_count)) or "0"
+                    )
+                except Exception:
+                    packs = line.pack_count
+                try:
+                    pack_size = Decimal(
+                        request.POST.get(f"size_{line.pk}", str(line.pack_size)) or "1"
+                    )
+                except Exception:
+                    pack_size = line.pack_size
+                try:
+                    cost = Decimal(
+                        request.POST.get(f"cost_{line.pk}", str(line.unit_cost)) or "0"
+                    )
+                except Exception:
+                    cost = line.unit_cost
+
+                if packs <= 0:
+                    line.delete()
+                    continue
+                line.pack_count = packs
+                line.pack_size = pack_size if pack_size > 0 else line.pack_size
+                line.unit_cost = cost
+                line.save()
+
+            new_notes = (request.POST.get("notes", "") or "").strip()
+            new_supplier_id = request.POST.get("supplier") or ""
+            header_changed = False
+            if new_notes != po.notes:
+                po.notes = new_notes
+                header_changed = True
+            if new_supplier_id and str(po.supplier_id) != new_supplier_id:
+                supplier = Supplier.objects.filter(pk=new_supplier_id).first()
+                if supplier:
+                    po.supplier = supplier
+                    header_changed = True
+            if header_changed:
+                po.save()
+
+        messages.success(request, f"Saved changes to {po.reference}.")
+        return redirect("po_detail", pk=pk)
+
+    # GET
+    lines = po.lines.select_related("raw_material").all()
+    suppliers = Supplier.objects.order_by("name")
+    materials_list = list(
+        RawMaterial.objects.filter(is_active=True)
+        .order_by("name")
+        .values("sku", "name", "pack_size", "last_paid_unit_cost", "current_stock")
+    )
+    return render(request, "inventory/po_edit.html", {
+        "po": po,
+        "lines": lines,
+        "suppliers": suppliers,
+        "materials_list": materials_list,
+    })
 
 
 @login_required
@@ -471,12 +710,63 @@ def po_mark_sent(request, pk):
 
 @login_required
 def po_mark_received(request, pk):
+    """Receive a PO into stock. GET renders a preview showing before/after
+    stock per material so Tersia can sanity-check the impact. POST applies
+    the receipt (idempotent — the model's save() ignores the second toggle).
+
+    Works from both DRAFT and SENT states — the SENT step is bookkeeping,
+    not a precondition for stock arrival."""
     po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    if po.status == "RECEIVED":
+        messages.info(request, f"{po.reference} is already received.")
+        return redirect("po_detail", pk=pk)
+    if po.status == "CANCELLED":
+        messages.warning(request, f"{po.reference} is cancelled — cannot receive.")
+        return redirect("po_detail", pk=pk)
+
+    preview = []
+    total_units = Decimal(0)
+    for line in po.lines.select_related("raw_material").all():
+        qty = line.units_total
+        if qty <= 0:
+            continue
+        m = line.raw_material
+        new_stock = m.current_stock + qty
+        cost_changes = (
+            line.unit_cost > 0 and line.unit_cost != m.last_paid_unit_cost
+        )
+        preview.append({
+            "line": line,
+            "material": m,
+            "qty_in": qty,
+            "current_stock": m.current_stock,
+            "new_stock": new_stock,
+            "old_unit_cost": m.last_paid_unit_cost,
+            "new_unit_cost": line.unit_cost if line.unit_cost > 0 else m.last_paid_unit_cost,
+            "cost_changes": cost_changes,
+        })
+        total_units += qty
+
     if request.method == "POST":
+        if not preview:
+            messages.warning(request, "Nothing to receive — PO has no lines.")
+            return redirect("po_detail", pk=pk)
         po.status = "RECEIVED"
         po.save()
-        messages.success(request, f"Received {po.reference}. Stock updated.")
-    return redirect("po_detail", pk=pk)
+        messages.success(
+            request,
+            f"✓ {po.reference} received. {len(preview)} material(s) updated, "
+            f"{int(total_units)} units added to stock.",
+        )
+        return redirect("po_detail", pk=pk)
+
+    return render(request, "inventory/po_receive.html", {
+        "po": po,
+        "preview": preview,
+        "total_units": total_units,
+        "total_cost": po.total_cost,
+    })
 
 
 # ---------------------------------------------------------------------------

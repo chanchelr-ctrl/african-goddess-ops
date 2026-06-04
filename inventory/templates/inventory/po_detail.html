@@ -10,6 +10,16 @@
     <small style="margin-left:0.5rem;">Supplier: <strong>{{ po.supplier.name }}</strong></small>
 </p>
 
+{% if po.status == "DRAFT" or po.status == "SENT" %}
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0 1.5rem;">
+    {% if po.status == "DRAFT" %}
+    <a href="{% url 'po_edit' po.pk %}" class="btn btn-ghost">✎ Edit lines</a>
+    <a href="{% url 'purchase_new_po' %}?po={{ po.pk }}" class="btn btn-ghost">+ Add more items</a>
+    {% endif %}
+    <a href="{% url 'po_mark_received' po.pk %}" class="btn" style="background: var(--success); border-color: var(--success); color: white;">✓ Receive into stock →</a>
+</div>
+{% endif %}
+
 <section class="card">
     <div class="card-header"><h2>Lines</h2><span class="meta">Total: <strong>R&nbsp;{{ po.total_cost|floatformat:0 }}</strong></span></div>
     <div class="card-body">
@@ -82,17 +92,6 @@
             <div class="form-actions">
                 <button type="submit" class="btn">Mark as sent →</button>
             </div>
-        </form>
-    </div>
-</section>
-{% elif po.status == "SENT" %}
-<section class="card">
-    <div class="card-header"><h2>Mark as received</h2></div>
-    <div class="card-body padded">
-        <p style="color:var(--text-muted); font-size:0.9rem;">Once the goods arrive, click the button below. Stock will be auto-incremented for each line.</p>
-        <form method="post" action="/purchase/po/{{ po.pk }}/received/">
-            {% csrf_token %}
-            <button type="submit" class="btn">Mark as received → pack stock onto shelves</button>
         </form>
     </div>
 </section>

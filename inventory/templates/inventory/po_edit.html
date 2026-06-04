@@ -1,0 +1,191 @@
+{% extends "inventory/base.html" %}
+{% block title %}Edit {{ po.reference }} — African Goddess Operations{% endblock %}
+
+{% block extra_head %}
+<style>
+    .edit-line { display: grid; grid-template-columns: 1.6fr 80px 80px 100px 110px 40px; gap: 0.5rem;
+        align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .edit-line:last-child { border-bottom: 0; }
+    .edit-line .name { min-width: 0; }
+    .edit-line .name strong { font-size: 0.95rem; display: block; }
+    .edit-line .name code { font-size: 0.75rem; }
+    .edit-line input[type="number"] { width: 100%; padding: 0.4rem; border: 1px solid var(--border);
+        border-radius: 6px; background: var(--surface); color: var(--text); font-family: inherit;
+        text-align: right; font-size: 0.92rem; }
+    .edit-line label.h { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.3px; font-weight: 600; }
+    .edit-line .total { font-weight: 600; color: var(--primary-dark); text-align: right; }
+    .edit-line .del-btn { background: transparent; border: 0; color: var(--alert); cursor: pointer;
+        font-size: 1.2rem; padding: 0.3rem 0.6rem; border-radius: 6px; }
+    .edit-line .del-btn:hover { background: var(--alert-bg); }
+
+    .edit-header { display: grid; grid-template-columns: 1.6fr 80px 80px 100px 110px 40px;
+        gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--surface-2); border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--border); }
+    .edit-header label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.3px; }
+    .edit-header label.r { text-align: right; }
+
+    .add-line-form {
+        display: grid; grid-template-columns: 1fr 100px 110px auto; gap: 0.6rem; align-items: end;
+        padding: 0.85rem 1rem; background: var(--primary-50); border-radius: 8px; margin-top: 1rem;
+    }
+    .add-line-form label { font-size: 0.72rem; color: var(--text-muted); display: block;
+        text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-bottom: 0.25rem; }
+    .add-line-form input, .add-line-form select { padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+        border-radius: 6px; background: var(--surface); width: 100%; font-family: inherit; font-size: 0.93rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'po_detail' po.pk %}">← Back to {{ po.reference }}</a></p>
+<h1>Edit {{ po.reference }}</h1>
+<p style="color: var(--text-muted);">
+    <span class="pill pill-status-{{ po.status|lower }}">{{ po.get_status_display }}</span>
+    Add, remove, or adjust lines below. Save to keep changes — nothing affects stock until you receive the PO.
+</p>
+
+<form method="post" action="{% url 'po_edit' po.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+
+    <section class="card">
+        <div class="card-header"><h2>PO header</h2></div>
+        <div class="card-body padded">
+            <div class="form-row">
+                <label for="supplier">Supplier</label>
+                <select name="supplier" id="supplier">
+                    {% for s in suppliers %}
+                    <option value="{{ s.pk }}" {% if s.pk == po.supplier.pk %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="notes">Notes</label>
+                <textarea name="notes" id="notes" rows="2">{{ po.notes }}</textarea>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Lines ({{ lines|length }})</h2>
+            <span class="meta">Total: <strong>R&nbsp;<span id="grand-total">{{ po.total_cost|floatformat:2 }}</span></strong></span>
+        </div>
+        <div class="card-body">
+            {% if lines %}
+            <div class="edit-header">
+                <label>Material</label>
+                <label class="r">Packs</label>
+                <label class="r">Pack size</label>
+                <label class="r">Unit cost (R)</label>
+                <label class="r">Line total</label>
+                <label></label>
+            </div>
+            {% for line in lines %}
+            <div class="edit-line" data-line="{{ line.pk }}">
+                <div class="name">
+                    <strong>{{ line.raw_material.name }}</strong>
+                    <code>{{ line.raw_material.sku }}</code>
+                </div>
+                <input type="number" name="packs_{{ line.pk }}"
+                       value="{{ line.pack_count|floatformat:0 }}"
+                       min="0" step="1" data-role="packs">
+                <input type="number" name="size_{{ line.pk }}"
+                       value="{{ line.pack_size|floatformat:0 }}"
+                       min="1" step="1" data-role="size">
+                <input type="number" name="cost_{{ line.pk }}"
+                       value="{{ line.unit_cost|floatformat:4 }}"
+                       min="0" step="0.0001" data-role="cost">
+                <div class="total" data-role="line-total">R&nbsp;<span data-amount>{{ line.line_total|floatformat:2 }}</span></div>
+                <button type="button" class="del-btn" title="Remove line" data-delete-line="{{ line.pk }}">×</button>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">No lines yet. Use the form below or click "Add more items from catalogue" to add some.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+        <a href="{% url 'po_detail' po.pk %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn">Save changes →</button>
+    </div>
+</form>
+
+<section class="card" style="margin-top: 2rem;">
+    <div class="card-header"><h2>Add another line</h2></div>
+    <div class="card-body padded">
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Quick add by typing in the search below, or <a href="{% url 'purchase_new_po' %}?po={{ po.pk }}">open the full picker →</a>
+            (browse the whole catalogue with filters).
+        </p>
+        <form method="post" action="{% url 'po_edit' po.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_line">
+            <div class="add-line-form">
+                <div>
+                    <label for="new_sku">Material (type to search)</label>
+                    <input list="materials-datalist" name="new_sku" id="new_sku"
+                           placeholder="SKU or name…" autocomplete="off" required>
+                    <datalist id="materials-datalist">
+                        {% for m in materials_list %}
+                        <option value="{{ m.sku }}">{{ m.name }} (stock {{ m.current_stock|floatformat:0 }})</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div>
+                    <label for="new_packs">Packs</label>
+                    <input type="number" name="new_packs" id="new_packs" value="1" min="1" step="1" required>
+                </div>
+                <div>
+                    <label for="new_cost">Unit cost (R) — blank = use last paid</label>
+                    <input type="number" name="new_cost" id="new_cost" min="0" step="0.0001" placeholder="auto">
+                </div>
+                <div>
+                    <button type="submit" class="btn">+ Add line</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<form id="delete-line-form" method="post" action="{% url 'po_edit' po.pk %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_line">
+    <input type="hidden" name="line_id" id="delete-line-id" value="">
+</form>
+
+<script>
+(function() {
+    function fmt2(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+    function recalcLine(row) {
+        const packs = parseFloat(row.querySelector('[data-role="packs"]').value) || 0;
+        const size = parseFloat(row.querySelector('[data-role="size"]').value) || 1;
+        const cost = parseFloat(row.querySelector('[data-role="cost"]').value) || 0;
+        const total = packs * size * cost;
+        row.querySelector('[data-amount]').textContent = fmt2(total);
+        return total;
+    }
+    function recalcGrand() {
+        let total = 0;
+        document.querySelectorAll(".edit-line").forEach(row => { total += recalcLine(row); });
+        document.getElementById("grand-total").textContent = fmt2(total);
+    }
+    document.querySelectorAll(".edit-line input").forEach(inp => {
+        inp.addEventListener("input", recalcGrand);
+    });
+
+    document.querySelectorAll("[data-delete-line]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (!confirm("Remove this line from the PO?")) return;
+            document.getElementById("delete-line-id").value = btn.dataset.deleteLine;
+            document.getElementById("delete-line-form").submit();
+        });
+    });
+
+    recalcGrand();
+})();
+</script>
+{% endblock %}

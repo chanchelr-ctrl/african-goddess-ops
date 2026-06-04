@@ -1,0 +1,110 @@
+{% extends "inventory/base.html" %}
+{% block title %}Receive {{ po.reference }} — African Goddess Operations{% endblock %}
+
+{% block extra_head %}
+<style>
+    .receive-callout {
+        background: var(--success-bg); border: 1px solid var(--success); border-left-width: 4px;
+        border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: var(--text);
+    }
+    .receive-callout h2 { color: var(--success); margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .receive-callout p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
+
+    .preview-table { width: 100%; }
+    .preview-table th, .preview-table td { padding: 0.6rem 0.85rem; vertical-align: middle; }
+    .preview-table .stock-jump { color: var(--success); font-weight: 600; white-space: nowrap; }
+    .preview-table .arrow { color: var(--text-muted); margin: 0 0.4rem; }
+    .preview-table .cost-changed { background: var(--primary-50); color: var(--primary-dark);
+        font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 999px; margin-left: 0.35rem;
+        font-weight: 600; }
+    .footer-bar { background: var(--surface); border-top: 2px solid var(--gold);
+        padding: 1rem 1.25rem; margin: 1.5rem -1.5rem -1rem -1.5rem;
+        display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+        box-shadow: 0 -4px 12px rgba(168, 90, 58, 0.08); }
+    .footer-bar .summary { font-size: 0.95rem; color: var(--text-muted); }
+    .footer-bar .summary strong { color: var(--text); }
+    .btn-receive { background: var(--success); border-color: var(--success); color: white; }
+    .btn-receive:hover { background: #4f6c3c; border-color: #4f6c3c; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'po_detail' po.pk %}">← Back to {{ po.reference }}</a></p>
+<h1>Receive into stock — {{ po.reference }}</h1>
+
+<div class="receive-callout">
+    <h2>This will update your stock shelf</h2>
+    <p>
+        When you confirm below, the app will add every line on this PO to your raw-material stock,
+        update the "last paid" cost where it changed, and write a stock-movement entry for the audit trail.
+        Review the before / after below before you click.
+    </p>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2>Materials about to arrive on your shelf</h2>
+        <span class="meta">{{ preview|length }} line(s) · {{ total_units|floatformat:0 }} units · R&nbsp;{{ total_cost|floatformat:2 }}</span>
+    </div>
+    <div class="card-body">
+        {% if preview %}
+        <table class="preview-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Material</th>
+                    <th style="text-align:right;">Receiving</th>
+                    <th>Stock change</th>
+                    <th style="text-align:right;">Unit cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in preview %}
+                <tr>
+                    <td><code>{{ p.material.sku }}</code></td>
+                    <td>
+                        <strong>{{ p.material.name }}</strong>
+                        {% if p.material.item_size or p.material.colour %}
+                        <br><small>{{ p.material.item_size }}{% if p.material.colour %} · {{ p.material.colour }}{% endif %}</small>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <strong>+ {{ p.qty_in|floatformat:0 }}</strong>
+                        <br><small>{{ p.line.pack_count|floatformat:0 }} pack(s) × {{ p.line.pack_size|floatformat:0 }}</small>
+                    </td>
+                    <td>
+                        {{ p.current_stock|floatformat:0 }}
+                        <span class="arrow">→</span>
+                        <span class="stock-jump">{{ p.new_stock|floatformat:0 }}</span>
+                    </td>
+                    <td style="text-align:right;">
+                        R&nbsp;{{ p.new_unit_cost|floatformat:2 }}
+                        {% if p.cost_changes %}<span class="cost-changed">updated</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No lines on this PO. Nothing to receive.</div>
+        {% endif %}
+    </div>
+</section>
+
+{% if preview %}
+<form method="post" action="{% url 'po_mark_received' po.pk %}">
+    {% csrf_token %}
+    <div class="footer-bar">
+        <div class="summary">
+            About to add <strong>{{ total_units|floatformat:0 }} units</strong> across
+            <strong>{{ preview|length }} material(s)</strong> · PO total
+            <strong>R&nbsp;{{ total_cost|floatformat:2 }}</strong>
+        </div>
+        <div>
+            <a href="{% url 'po_detail' po.pk %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-receive">✓ Confirm — receive into stock</button>
+        </div>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

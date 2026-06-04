@@ -20,7 +20,9 @@ urlpatterns = [
     # Purchase flow
     path("purchase/", views.purchase_index, name="purchase"),
     path("purchase/draft/", views.purchase_draft_po, name="purchase_draft_po"),
+    path("purchase/new/", views.purchase_new_po, name="purchase_new_po"),
     path("purchase/po/<int:pk>/", views.po_detail, name="po_detail"),
+    path("purchase/po/<int:pk>/edit/", views.po_edit, name="po_edit"),
     path("purchase/po/<int:pk>/sent/", views.po_mark_sent, name="po_mark_sent"),
     path("purchase/po/<int:pk>/received/", views.po_mark_received, name="po_mark_received"),
     path("purchase/po/<int:pk>/cancel/", views.po_cancel, name="po_cancel"),

@@ -1,0 +1,322 @@
+{% extends "inventory/base.html" %}
+{% block title %}{% if append_po %}Add items to {{ append_po.reference }}{% else %}Build a Purchase Order{% endif %} — African Goddess Operations{% endblock %}
+
+{% block extra_head %}
+<style>
+    .picker-toolbar { display: grid; gap: 0.75rem; }
+    .picker-toolbar .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .picker-toolbar label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.4px; margin-right: 0.5rem; }
+    .picker-toolbar input[type="search"], .picker-toolbar select, .picker-toolbar textarea {
+        padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px;
+        background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.95rem; }
+    .picker-toolbar input[type="search"] { flex: 1 1 280px; min-width: 200px; }
+    .picker-toolbar textarea { width: 100%; min-height: 2.5rem; resize: vertical; }
+    .picker-toolbar .quick { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .picker-toolbar .quick button { background: var(--surface); border: 1px solid var(--border);
+        color: var(--text); padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.85rem;
+        cursor: pointer; transition: all 0.15s; }
+    .picker-toolbar .quick button.active {
+        background: var(--primary); border-color: var(--primary); color: white; }
+    .picker-toolbar .quick button:hover:not(.active) { background: var(--surface-2); }
+
+    .materials-grid { display: grid; gap: 0.6rem; }
+    .material-row {
+        display: grid; grid-template-columns: 1fr auto; gap: 0.5rem 1.25rem;
+        background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+        padding: 0.85rem 1rem; transition: all 0.15s;
+    }
+    .material-row.in-po {
+        border-color: var(--gold); background: var(--primary-50);
+        box-shadow: 0 0 0 1px var(--gold) inset; }
+    .material-row.hidden { display: none; }
+
+    .material-row .main-info { min-width: 0; }
+    .material-row .top-line { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+    .material-row .top-line strong { font-size: 1.02rem; color: var(--text); }
+    .material-row .top-line code { font-size: 0.78rem; }
+    .material-row .meta-line { color: var(--text-muted); font-size: 0.83rem; margin-top: 0.2rem; }
+    .material-row .stock-line { font-size: 0.85rem; margin-top: 0.35rem; color: var(--text-muted); }
+    .material-row .stock-line strong { color: var(--text); }
+
+    .pill-stock-low  { background: var(--alert-bg); color: var(--alert); font-size: 0.72rem;
+        padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.3px; }
+    .pill-stock-out  { background: var(--alert); color: white; font-size: 0.72rem;
+        padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.3px; }
+    .pill-stock-ok   { background: var(--success-bg); color: var(--success); font-size: 0.72rem;
+        padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.3px; }
+    .pill-on-po { background: var(--gold); color: var(--primary-dark); font-size: 0.72rem;
+        padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.3px; }
+
+    .qty-block {
+        display: grid; grid-template-columns: auto auto auto auto; gap: 0.4rem 0.6rem;
+        align-items: center; align-content: center; min-width: 320px; font-size: 0.88rem;
+    }
+    .qty-block label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;
+        letter-spacing: 0.3px; font-weight: 600; text-align: right; }
+    .qty-block input[type="number"] {
+        width: 80px; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.95rem;
+        text-align: right;
+    }
+    .qty-block .line-total { font-weight: 600; color: var(--primary-dark); text-align: right;
+        white-space: nowrap; }
+
+    .picker-summary {
+        position: sticky; bottom: 0; left: 0; right: 0;
+        background: var(--surface); border-top: 2px solid var(--gold);
+        padding: 0.85rem 1.25rem; margin: 1.5rem -1.5rem -1rem -1.5rem;
+        display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+        box-shadow: 0 -4px 12px rgba(168, 90, 58, 0.08);
+    }
+    .picker-summary .totals { font-size: 1rem; }
+    .picker-summary .totals strong { color: var(--primary-dark); }
+
+    .empty-results { padding: 2rem; text-align: center; color: var(--text-muted); font-style: italic; }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="/purchase/">← Back to Purchase</a></p>
+
+{% if append_po %}
+<h1>Add items to {{ append_po.reference }}</h1>
+<p style="color:var(--text-muted);">Supplier: <strong>{{ append_po.supplier.name }}</strong>. Lines below are added to this draft. Items already on the PO are marked.</p>
+{% else %}
+<h1>Build a Purchase Order</h1>
+<p style="color:var(--text-muted);">Browse the catalogue, set <strong>Packs</strong> on the items you want, and save. The PO is saved as <strong>Draft</strong> — nothing posts to stock until you mark it Received later.</p>
+{% endif %}
+
+<form method="post" action="{% if append_po %}{% url 'purchase_new_po' %}?po={{ append_po.pk }}{% else %}{% url 'purchase_new_po' %}{% endif %}">
+    {% csrf_token %}
+
+    {% if not append_po %}
+    <section class="card">
+        <div class="card-header"><h2>PO header</h2></div>
+        <div class="card-body padded">
+            <div class="picker-toolbar">
+                <div class="row">
+                    <label for="supplier">Supplier</label>
+                    <select name="supplier" id="supplier">
+                        {% for s in suppliers %}
+                        <option value="{{ s.pk }}" {% if s.name == "Temu" %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="row">
+                    <label for="notes" style="margin-right: 0;">Notes (optional)</label>
+                </div>
+                <textarea name="notes" id="notes" placeholder="e.g. Mardi Gras restock"></textarea>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Pick materials</h2>
+            <span class="meta" id="visible-count">{{ total_count }} of {{ total_count }} shown</span>
+        </div>
+        <div class="card-body padded">
+            <div class="picker-toolbar">
+                <div class="row">
+                    <input type="search" id="search-input" placeholder="Search by SKU, name, colour, size…" autocomplete="off">
+                </div>
+                <div class="row">
+                    <label for="cat-filter">Category</label>
+                    <select id="cat-filter">
+                        <option value="">All</option>
+                        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                    </select>
+                    <label for="col-filter">Colour</label>
+                    <select id="col-filter">
+                        <option value="">All</option>
+                        {% for c in colours %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="row quick">
+                    <button type="button" data-filter="all" class="active">All ({{ total_count }})</button>
+                    <button type="button" data-filter="low">Below reorder ({{ low_count }})</button>
+                    <button type="button" data-filter="out">Out of stock ({{ out_count }})</button>
+                    <button type="button" data-filter="selected">In this PO (<span id="in-po-count">0</span>)</button>
+                </div>
+            </div>
+
+            <div class="materials-grid" id="materials-grid" style="margin-top: 1rem;">
+                {% for x in materials %}
+                <div class="material-row {% if x.already_on_po %}in-po{% endif %}"
+                     data-sku="{{ x.material.sku }}"
+                     data-cat="{{ x.category }}"
+                     data-col="{{ x.colour_family }}"
+                     data-stock="{{ x.stock_status }}"
+                     data-low="{% if x.is_low %}1{% else %}0{% endif %}"
+                     data-on-po="{% if x.already_on_po %}1{% else %}0{% endif %}"
+                     data-search="{{ x.material.sku|lower }} {{ x.material.name|lower }} {{ x.material.colour|lower }} {{ x.material.item_size|lower }} {{ x.material.finish|lower }} {{ x.material.shape|lower }}">
+                    <div class="main-info">
+                        <div class="top-line">
+                            <strong>{{ x.material.name }}</strong>
+                            <code>{{ x.material.sku }}</code>
+                            {% if x.stock_status == "out" %}<span class="pill-stock-out">Out</span>
+                            {% elif x.stock_status == "low" %}<span class="pill-stock-low">Low</span>
+                            {% else %}<span class="pill-stock-ok">OK</span>{% endif %}
+                            {% if x.already_on_po %}<span class="pill-on-po">Already on PO</span>{% endif %}
+                        </div>
+                        <div class="meta-line">
+                            {{ x.material.item_size|default:"—" }}
+                            {% if x.material.colour %} · {{ x.material.colour }}{% endif %}
+                            {% if x.category %} · {{ x.category }}{% endif %}
+                            {% if x.material.preferred_supplier %} · {{ x.material.preferred_supplier.name }}{% endif %}
+                        </div>
+                        <div class="stock-line">
+                            In stock: <strong>{{ x.material.current_stock|floatformat:0 }}</strong>
+                            · Reorder at: {{ x.material.reorder_point|floatformat:0 }}
+                            · Pack: <strong>{{ x.material.pack_size|floatformat:0 }}</strong>
+                            · Last cost: <strong>R&nbsp;{{ x.material.last_paid_unit_cost|floatformat:2 }}</strong>/unit
+                        </div>
+                    </div>
+                    {% if not x.already_on_po %}
+                    <div class="qty-block">
+                        <label>Packs</label>
+                        <input type="number" name="packs_{{ x.material.sku }}" value="0" min="0" step="1"
+                               data-sku="{{ x.material.sku }}" data-role="packs">
+                        <label>Unit cost (R)</label>
+                        <input type="number" name="cost_{{ x.material.sku }}"
+                               value="{{ x.material.last_paid_unit_cost|floatformat:4 }}"
+                               min="0" step="0.0001"
+                               data-sku="{{ x.material.sku }}" data-role="cost">
+                        <input type="hidden" name="size_{{ x.material.sku }}"
+                               value="{{ x.material.pack_size|floatformat:4 }}"
+                               data-sku="{{ x.material.sku }}" data-role="size">
+                        <div class="line-total" data-sku="{{ x.material.sku }}" data-role="line-total" style="grid-column: span 2;">
+                            <span style="font-size:0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Line:</span>
+                            R&nbsp;<span data-line-amount>0.00</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="qty-block">
+                        <div style="grid-column: span 4; color: var(--text-muted); font-style: italic; text-align: right;">
+                            <a href="{% url 'po_edit' append_po.pk %}">Edit on PO →</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="empty-results" id="empty-results" style="display:none;">No materials match your filters.</div>
+        </div>
+    </section>
+
+    <div class="picker-summary">
+        <div class="totals">
+            <span id="summary-count">0</span> item(s) ·
+            Total: <strong>R&nbsp;<span id="summary-total">0.00</span></strong>
+        </div>
+        <div>
+            <a href="/purchase/" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn">{% if append_po %}Add to {{ append_po.reference }} →{% else %}Save as Draft PO →{% endif %}</button>
+        </div>
+    </div>
+</form>
+
+<script>
+(function() {
+    const grid = document.getElementById("materials-grid");
+    const search = document.getElementById("search-input");
+    const catFilter = document.getElementById("cat-filter");
+    const colFilter = document.getElementById("col-filter");
+    const quickBtns = document.querySelectorAll(".quick button");
+    const visibleCount = document.getElementById("visible-count");
+    const emptyResults = document.getElementById("empty-results");
+    const summaryCount = document.getElementById("summary-count");
+    const summaryTotal = document.getElementById("summary-total");
+    const inPoCount = document.getElementById("in-po-count");
+    const totalCount = {{ total_count }};
+
+    let quickFilter = "all";
+
+    function fmt2(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+    function recalcLine(row) {
+        const packsEl = row.querySelector('[data-role="packs"]');
+        const costEl = row.querySelector('[data-role="cost"]');
+        const sizeEl = row.querySelector('[data-role="size"]');
+        const amountEl = row.querySelector('[data-line-amount]');
+        if (!packsEl || !amountEl) return 0;
+        const packs = parseFloat(packsEl.value) || 0;
+        const cost = parseFloat(costEl.value) || 0;
+        const size = parseFloat(sizeEl?.value) || 1;
+        const line = packs * size * cost;
+        amountEl.textContent = fmt2(line);
+        if (packs > 0) row.classList.add("in-po");
+        else row.classList.remove("in-po");
+        return line;
+    }
+
+    function recalcSummary() {
+        let count = 0, total = 0;
+        document.querySelectorAll(".material-row").forEach(row => {
+            const packsEl = row.querySelector('[data-role="packs"]');
+            if (!packsEl) return;
+            const packs = parseFloat(packsEl.value) || 0;
+            if (packs > 0) { count += 1; total += recalcLine(row); }
+            else { recalcLine(row); }
+        });
+        summaryCount.textContent = count;
+        summaryTotal.textContent = fmt2(total);
+        inPoCount.textContent = count;
+    }
+
+    function applyFilters() {
+        const q = search.value.trim().toLowerCase();
+        const cat = catFilter.value;
+        const col = colFilter.value;
+        let shown = 0;
+        document.querySelectorAll(".material-row").forEach(row => {
+            const data = row.dataset;
+            let visible = true;
+            if (q && !data.search.includes(q)) visible = false;
+            if (cat && data.cat !== cat) visible = false;
+            if (col && data.col !== col) visible = false;
+            if (quickFilter === "low" && data.low !== "1") visible = false;
+            if (quickFilter === "out" && data.stock !== "out") visible = false;
+            if (quickFilter === "selected") {
+                const packsEl = row.querySelector('[data-role="packs"]');
+                const packs = packsEl ? (parseFloat(packsEl.value) || 0) : 0;
+                if (packs <= 0 && data.onPo !== "1") visible = false;
+            }
+            row.classList.toggle("hidden", !visible);
+            if (visible) shown += 1;
+        });
+        visibleCount.textContent = shown + " of " + totalCount + " shown";
+        emptyResults.style.display = shown === 0 ? "block" : "none";
+    }
+
+    search.addEventListener("input", applyFilters);
+    catFilter.addEventListener("change", applyFilters);
+    colFilter.addEventListener("change", applyFilters);
+
+    quickBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            quickBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            quickFilter = btn.dataset.filter;
+            applyFilters();
+        });
+    });
+
+    grid.addEventListener("input", (e) => {
+        if (e.target.matches('[data-role="packs"], [data-role="cost"]')) {
+            const row = e.target.closest(".material-row");
+            recalcLine(row);
+            recalcSummary();
+        }
+    });
+
+    recalcSummary();
+})();
+</script>
+{% endblock %}

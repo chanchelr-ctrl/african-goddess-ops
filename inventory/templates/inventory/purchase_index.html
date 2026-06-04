@@ -4,7 +4,15 @@
 {% with active="purchase" %}{% endwith %}
 
 <h1>Purchase</h1>
-<p style="color:var(--text-muted);">Materials below their reorder point. Tick the ones to include, then draft a PO.</p>
+<p style="color:var(--text-muted);">
+    Two ways to start an order: draft a PO from the low-stock list below,
+    or <a href="{% url 'purchase_new_po' %}">build a PO by picking from the whole catalogue →</a>
+    (useful when you're ordering something that isn't yet flagged low).
+</p>
+
+<div style="margin-bottom: 1rem;">
+    <a href="{% url 'purchase_new_po' %}" class="btn">+ Build a Purchase Order</a>
+</div>
 
 <form method="post" action="/purchase/draft/">
     {% csrf_token %}
